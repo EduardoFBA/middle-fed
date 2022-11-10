@@ -6,7 +6,6 @@
   "scripts": {
     "dev-build": "npx tsc && node dist/app.js",
     "dev": "nodemon --watch src --ext ts --exec npm run dev-build",
-    "build": "npx typescript",
     "start": "node dist/app.js"
   },
   "keywords": [],
