@@ -4,7 +4,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-import express, { Express, Router, Request, Response } from "express";
+import express, { Express } from "express";
 import { apiRoutes, fedRoutes } from "./routes";
 import bodyParser from "body-parser";
 

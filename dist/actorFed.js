@@ -20,4 +20,10 @@ exports.actorFedRouter.get("/u/:username/actor.json", (req, res) => __awaiter(vo
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });
+exports.actorFedRouter.get("/.well-known/webfinger", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if ("string" === typeof req.query.resource) {
+        const acct = req.query.resource;
+        res.send(yield (0, utils_1.search)("webfinger", "subject", acct));
+    }
+}));
 //# sourceMappingURL=actorFed.js.map
