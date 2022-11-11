@@ -23,7 +23,10 @@ exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
 exports.actorFedRouter.get("/.well-known/webfinger", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if ("string" === typeof req.query.resource) {
         const acct = req.query.resource;
-        res.send(yield (0, utils_1.search)("webfinger", "subject", acct));
+        const response = yield (0, utils_1.search)("webfinger", "subject", acct);
+        if (response.length) {
+            res.send(response[0]);
+        }
     }
 }));
 //# sourceMappingURL=actorFed.js.map

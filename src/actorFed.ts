@@ -22,7 +22,10 @@ actorFedRouter.get(
   async (req: Request, res: Response) => {
     if ("string" === typeof req.query.resource) {
       const acct: string = req.query.resource;
-      res.send(await search("webfinger", "subject", acct));
+      const response: string[] = await search("webfinger", "subject", acct);
+      if (response.length) {
+        res.send(response[0]);
+      }
     }
   }
 );
