@@ -5,9 +5,14 @@ export const actorFedRouter = Router();
 
 actorFedRouter.get("/u/:username", async (req: Request, res: Response) => {
   const domain = req.app.get("localDomain");
-  res.send(
-    await search("actor", "id", `https://${domain}/u/${req.params.username}`)
+  const result = await search(
+    "actor",
+    "id",
+    `https://${domain}/u/${req.params.username}`
   );
+  if (result.length) {
+    res.send(result[0]);
+  } else throw "No account found";
 });
 
 actorFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
@@ -15,7 +20,3 @@ actorFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
 });
 
 actorFedRouter.get("/.well-known/webfinger", webfinger);
-
-actorFedRouter.get("/test", async (req: Request, res: Response) => {
-  res.send(await getWebfinger(req.body.resource, req.app.get("localDomain")));
-});

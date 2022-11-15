@@ -36,8 +36,6 @@ exports.actorApiRouter.get("/actor/", (req, res) => {
     // });
 });
 exports.actorApiRouter.post("/actor/", (req, res) => {
-    // pass in a name for an account, if the account doesn't exist, create it!
-    console.log(req.body);
     const account = req.body.account;
     if (account === undefined) {
         return res.status(400).json({

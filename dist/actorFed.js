@@ -15,13 +15,15 @@ const utils_1 = require("./utils");
 exports.actorFedRouter = (0, express_1.Router)();
 exports.actorFedRouter.get("/u/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const domain = req.app.get("localDomain");
-    res.send(yield (0, utils_1.search)("actor", "id", `https://${domain}/u/${req.params.username}`));
+    const result = yield (0, utils_1.search)("actor", "id", `https://${domain}/u/${req.params.username}`);
+    if (result.length) {
+        res.send(result[0]);
+    }
+    else
+        throw "No account found";
 }));
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });
 exports.actorFedRouter.get("/.well-known/webfinger", utils_1.webfinger);
-exports.actorFedRouter.get("/test", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.getWebfinger)(req.body.resource, req.app.get("localDomain")));
-}));
 //# sourceMappingURL=actorFed.js.map

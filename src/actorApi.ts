@@ -14,8 +14,6 @@ actorApiRouter.get("/actor/", (req: Request, res: Response) => {
 });
 
 actorApiRouter.post("/actor/", (req: Request, res: Response) => {
-  // pass in a name for an account, if the account doesn't exist, create it!
-  console.log(req.body);
   const account = req.body.account;
   if (account === undefined) {
     return res.status(400).json({
