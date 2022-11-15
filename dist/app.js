@@ -26,6 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
 const admin = __importStar(require("firebase-admin"));
 const serviceAccount = require("../serviceAccountKey.json");
 admin.initializeApp({
@@ -35,18 +36,18 @@ const express_1 = __importDefault(require("express"));
 const routes_1 = require("./routes");
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors = require("cors");
-const app = (0, express_1.default)();
+exports.app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 const db = admin.firestore();
 const config = require("../config.json");
 const { USER, PASS, DOMAIN } = config;
-app.set("db", db);
-app.set("domain", DOMAIN);
-app.use(express_1.default.json());
-app.use(body_parser_1.default.urlencoded({ extended: true }));
-app.use("/api/", cors(), routes_1.apiRoutes);
-app.use("/", cors(), routes_1.fedRoutes);
-app.listen(PORT, () => {
+exports.app.set("db", db);
+exports.app.set("localDomain", DOMAIN);
+exports.app.use(express_1.default.json());
+exports.app.use(body_parser_1.default.urlencoded({ extended: true }));
+exports.app.use("/api/", cors(), routes_1.apiRoutes);
+exports.app.use("/", cors(), routes_1.fedRoutes);
+exports.app.listen(PORT, () => {
     return console.log(`Express is listening at http://localhost:${PORT}`);
 });
 //# sourceMappingURL=app.js.map

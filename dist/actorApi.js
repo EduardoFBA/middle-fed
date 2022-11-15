@@ -35,9 +35,6 @@ exports.actorApiRouter.get("/actor/", (req, res) => {
     //   if (err) throw err;
     // });
 });
-exports.actorApiRouter.get("/u/:username/outbox", (req, res) => {
-    res.send({ dvklsn: req.params.username });
-});
 exports.actorApiRouter.post("/actor/", (req, res) => {
     // pass in a name for an account, if the account doesn't exist, create it!
     console.log(req.body);
@@ -59,7 +56,7 @@ exports.actorApiRouter.post("/actor/", (req, res) => {
             format: "pem",
         },
     }, (err, publicKey, privateKey) => {
-        const domain = req.app.get("domain");
+        const domain = req.app.get("localDomain");
         const actorRecord = createActor(account, domain, publicKey);
         const webfingerRecord = createWebfinger(account, domain);
         const apikey = crypto.randomBytes(16).toString("hex");

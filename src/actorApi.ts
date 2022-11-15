@@ -1,4 +1,4 @@
-import express, { Request, Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import * as crypto from "crypto";
 import { save } from "./utils";
 
@@ -11,10 +11,6 @@ actorApiRouter.get("/actor/", (req: Request, res: Response) => {
 
   //   if (err) throw err;
   // });
-});
-
-actorApiRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
-  res.send({ dvklsn: req.params.username });
 });
 
 actorApiRouter.post("/actor/", (req: Request, res: Response) => {
@@ -41,7 +37,7 @@ actorApiRouter.post("/actor/", (req: Request, res: Response) => {
       },
     },
     (err, publicKey, privateKey) => {
-      const domain = req.app.get("domain");
+      const domain = req.app.get("localDomain");
       const actorRecord = createActor(account, domain, publicKey);
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = crypto.randomBytes(16).toString("hex");

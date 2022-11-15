@@ -10,7 +10,7 @@ import bodyParser from "body-parser";
 
 const cors = require("cors");
 
-const app: Express = express();
+export const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 const db = admin.firestore();
@@ -19,7 +19,7 @@ const config = require("../config.json");
 const { USER, PASS, DOMAIN } = config;
 
 app.set("db", db);
-app.set("domain", DOMAIN);
+app.set("localDomain", DOMAIN);
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/", cors(), apiRoutes);
