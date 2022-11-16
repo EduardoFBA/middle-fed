@@ -1,7 +1,5 @@
 import { firestore } from "firebase-admin";
-import { Request, Response } from "express";
 import fetch from "node-fetch";
-import { app } from "./app";
 
 const db = firestore();
 export function save(collection: string, data: any) {
@@ -22,16 +20,6 @@ export async function search(
   });
 
   return docs;
-}
-
-export async function webfinger(req: Request, res: Response) {
-  if (req.query.resource) {
-    const domain = req.app.get("localDomain");
-    res.send(await getWebfinger(req.query.resource as string, domain));
-    return;
-  }
-
-  throw "No account provided";
 }
 
 export async function getWebfinger(resource: string, localDomain: string) {

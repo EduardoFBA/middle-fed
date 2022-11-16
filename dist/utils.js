@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractHandles = exports.getWebfinger = exports.webfinger = exports.search = exports.save = void 0;
+exports.extractHandles = exports.getWebfinger = exports.search = exports.save = void 0;
 const firebase_admin_1 = require("firebase-admin");
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const db = (0, firebase_admin_1.firestore)();
@@ -32,17 +32,6 @@ function search(collection, field, value) {
     });
 }
 exports.search = search;
-function webfinger(req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (req.query.resource) {
-            const domain = req.app.get("localDomain");
-            res.send(yield getWebfinger(req.query.resource, domain));
-            return;
-        }
-        throw "No account provided";
-    });
-}
-exports.webfinger = webfinger;
 function getWebfinger(resource, localDomain) {
     return __awaiter(this, void 0, void 0, function* () {
         const [username, domain] = extractHandles(resource);

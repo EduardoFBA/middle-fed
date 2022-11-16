@@ -22,8 +22,21 @@ exports.actorFedRouter.get("/u/:username", (req, res) => __awaiter(void 0, void 
     else
         throw "No account found";
 }));
+exports.actorFedRouter.get("/u/:username/followers", (req, res) => {
+    res.send({ dvklsn: req.params.username });
+});
+exports.actorFedRouter.get("/u/:username/inbox", (req, res) => {
+    (0, utils_1.save)("inbox", req.body);
+});
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });
-exports.actorFedRouter.get("/.well-known/webfinger", utils_1.webfinger);
+exports.actorFedRouter.get("/.well-known/webfinger", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (req.query.resource) {
+        const domain = req.app.get("localDomain");
+        res.send(yield (0, utils_1.getWebfinger)(req.query.resource, domain));
+        return;
+    }
+    throw "No account provided";
+}));
 //# sourceMappingURL=actorFed.js.map
