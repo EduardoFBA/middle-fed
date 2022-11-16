@@ -20,7 +20,11 @@ actorFedRouter.get("/u/:username/followers", (req: Request, res: Response) => {
 });
 
 actorFedRouter.get("/u/:username/inbox", (req: Request, res: Response) => {
-  save("inbox", req.body);
+  save("inboxGET", req.body);
+});
+
+actorFedRouter.post("/u/:username/inbox", (req: Request, res: Response) => {
+  save("inboxPOST", req.body);
 });
 
 actorFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {

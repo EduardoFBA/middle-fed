@@ -26,7 +26,10 @@ exports.actorFedRouter.get("/u/:username/followers", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });
 exports.actorFedRouter.get("/u/:username/inbox", (req, res) => {
-    (0, utils_1.save)("inbox", req.body);
+    (0, utils_1.save)("inboxGET", req.body);
+});
+exports.actorFedRouter.post("/u/:username/inbox", (req, res) => {
+    (0, utils_1.save)("inboxPOST", req.body);
 });
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ dvklsn: req.params.username });
