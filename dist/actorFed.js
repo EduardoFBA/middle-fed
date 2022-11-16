@@ -28,9 +28,13 @@ exports.actorFedRouter.get("/u/:username/followers", (req, res) => {
 exports.actorFedRouter.get("/u/:username/inbox", (req, res) => {
     (0, utils_1.save)("inboxGET", req.body);
 });
-exports.actorFedRouter.post("/u/:username/inbox", (req, res) => {
-    (0, utils_1.save)("inboxPOST", req.body);
-});
+exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("log", req.body);
+    if (req.body) {
+        (0, utils_1.save)("inbox", req.body);
+    }
+    res.send(yield (0, utils_1.list)("inbox"));
+}));
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });

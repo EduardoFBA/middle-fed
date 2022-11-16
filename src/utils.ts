@@ -2,6 +2,18 @@ import { firestore } from "firebase-admin";
 import fetch from "node-fetch";
 
 const db = firestore();
+export async function list(collection: string): Promise<any[]> {
+  const collectionRef = db.collection(collection);
+  const snapshot = await collectionRef.get();
+
+  const docs = [];
+  snapshot.forEach((doc) => {
+    docs.push(doc.data());
+  });
+
+  return docs;
+}
+
 export function save(collection: string, data: any) {
   db.collection(collection).doc().set(data);
 }

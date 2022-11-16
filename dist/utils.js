@@ -12,10 +12,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractHandles = exports.getWebfinger = exports.search = exports.save = void 0;
+exports.extractHandles = exports.getWebfinger = exports.search = exports.save = exports.list = void 0;
 const firebase_admin_1 = require("firebase-admin");
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const db = (0, firebase_admin_1.firestore)();
+function list(collection) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const collectionRef = db.collection(collection);
+        const snapshot = yield collectionRef.get();
+        const docs = [];
+        snapshot.forEach((doc) => {
+            docs.push(doc.data());
+        });
+        return docs;
+    });
+}
+exports.list = list;
 function save(collection, data) {
     db.collection(collection).doc().set(data);
 }
