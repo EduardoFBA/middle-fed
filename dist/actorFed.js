@@ -31,7 +31,12 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => {
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("log", req.body);
     if (req.body) {
-        (0, utils_1.save)("inbox", req.body);
+        console.log("empty body", "sending accept");
+        res.send(createAcceptActivity(`${req.query.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
+    }
+    else {
+        console.log("follow activity", "saving actor in followers");
+        (0, utils_1.save)("followers", req.body);
     }
     res.send(yield (0, utils_1.list)("inbox"));
 }));

@@ -28,7 +28,17 @@ actorFedRouter.post(
   async (req: Request, res: Response) => {
     console.log("log", req.body);
     if (req.body) {
-      save("inbox", req.body);
+      console.log("empty body", "sending accept");
+      res.send(
+        createAcceptActivity(
+          `${req.query.username}@${req.app.get("localDomain")}`,
+          req.body.target,
+          "Follow"
+        )
+      );
+    } else {
+      console.log("follow activity", "saving actor in followers");
+      save("followers", req.body);
     }
 
     res.send(await list("inbox"));
