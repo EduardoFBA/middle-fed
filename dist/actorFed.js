@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.actorFedRouter = void 0;
 const express_1 = require("express");
 const utils_1 = require("./utils");
+const utils_json_1 = require("./utils-json");
 exports.actorFedRouter = (0, express_1.Router)();
 exports.actorFedRouter.get("/u/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const domain = req.app.get("localDomain");
@@ -32,7 +33,7 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
     console.log("log", req.body);
     if (req.body) {
         console.log("empty body", "sending accept");
-        res.send(createAcceptActivity(`${req.query.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
+        res.send((0, utils_json_1.createAcceptActivity)(`${req.query.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
     }
     else {
         console.log("follow activity", "saving actor in followers");

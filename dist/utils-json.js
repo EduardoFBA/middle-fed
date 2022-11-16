@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createWebfinger = exports.createActor = exports.createAcceptActivity = void 0;
 function createAcceptActivity(actorId, targetId, activityType) {
     return {
         "@context": "https://www.w3.org/ns/activitystreams",
@@ -9,6 +12,7 @@ function createAcceptActivity(actorId, targetId, activityType) {
         },
     };
 }
+exports.createAcceptActivity = createAcceptActivity;
 function createActor(name, domain, pubkey) {
     return {
         "@context": [
@@ -29,6 +33,7 @@ function createActor(name, domain, pubkey) {
         },
     };
 }
+exports.createActor = createActor;
 function createWebfinger(name, domain) {
     return {
         subject: `acct:${name}@${domain}`,
@@ -41,4 +46,5 @@ function createWebfinger(name, domain) {
         ],
     };
 }
+exports.createWebfinger = createWebfinger;
 //# sourceMappingURL=utils-json.js.map

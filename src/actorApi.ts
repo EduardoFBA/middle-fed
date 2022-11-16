@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import * as crypto from "crypto";
 import { save } from "./utils";
+import { createActor, createWebfinger } from "./utils-json";
 
 export const actorApiRouter = Router();
 

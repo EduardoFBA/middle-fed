@@ -1,4 +1,4 @@
-function createAcceptActivity(
+export function createAcceptActivity(
   actorId: string,
   targetId: string,
   activityType: string
@@ -14,7 +14,7 @@ function createAcceptActivity(
   };
 }
 
-function createActor(name, domain, pubkey) {
+export function createActor(name, domain, pubkey) {
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
@@ -37,7 +37,7 @@ function createActor(name, domain, pubkey) {
   };
 }
 
-function createWebfinger(name, domain) {
+export function createWebfinger(name, domain) {
   return {
     subject: `acct:${name}@${domain}`,
 

@@ -27,6 +27,7 @@ exports.actorApiRouter = void 0;
 const express_1 = require("express");
 const crypto = __importStar(require("crypto"));
 const utils_1 = require("./utils");
+const utils_json_1 = require("./utils-json");
 exports.actorApiRouter = (0, express_1.Router)();
 exports.actorApiRouter.get("/actor/", (req, res) => {
     res.send({ dvklsn: 333333333333333 });
@@ -55,8 +56,8 @@ exports.actorApiRouter.post("/actor/", (req, res) => {
         },
     }, (err, publicKey, privateKey) => {
         const domain = req.app.get("localDomain");
-        const actorRecord = createActor(account, domain, publicKey);
-        const webfingerRecord = createWebfinger(account, domain);
+        const actorRecord = (0, utils_json_1.createActor)(account, domain, publicKey);
+        const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
         const apikey = crypto.randomBytes(16).toString("hex");
         (0, utils_1.save)("actor", actorRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
