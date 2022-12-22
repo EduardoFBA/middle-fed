@@ -4,10 +4,16 @@ import { createAcceptActivity } from "./utils-json";
 
 export const actorFedRouter = Router();
 
-actorFedRouter.get(
-  "/authorize_interaction",
-  (req: Request, res: Response) => {}
-);
+actorFedRouter.get("/authorize_interaction", (req: Request, res: Response) => {
+  console.log("authorize interaction", req.body);
+  res.send(
+    createAcceptActivity(
+      `${req.params.username}@${req.app.get("localDomain")}`,
+      req.body.target,
+      "Follow"
+    )
+  );
+});
 
 actorFedRouter.get("/u/:username", async (req: Request, res: Response) => {
   const domain = req.app.get("localDomain");
