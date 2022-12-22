@@ -55,7 +55,9 @@ actorFedRouter.get(
 actorFedRouter.post(
   "/u/:username/inbox",
   async (req: Request, res: Response) => {
-    console.log("request body", req.body);
+    const buf = await buffer(req);
+    const rawBody = buf.toString("utf8");
+    console.log("authorize interaction", rawBody);
     if (req.body) {
       await save("inbox", req.body);
       res.send(

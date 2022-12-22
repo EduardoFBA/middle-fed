@@ -64,7 +64,9 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0,
     res.send(yield (0, utils_1.list)("inbox"));
 }));
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("request body", req.body);
+    const buf = yield buffer(req);
+    const rawBody = buf.toString("utf8");
+    console.log("authorize interaction", rawBody);
     if (req.body) {
         yield (0, utils_1.save)("inbox", req.body);
         res.send((0, utils_json_1.createAcceptActivity)(`${req.params.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
