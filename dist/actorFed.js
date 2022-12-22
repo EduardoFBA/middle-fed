@@ -67,8 +67,8 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0,
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
-    // const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-    const message = req.body;
+    const message = JSON.parse(rawBody);
+    // const message: AP.Activity = <AP.Activity>req.body;
     if (message.type == "Follow") {
         const followMessage = message;
         if (followMessage.id == null)

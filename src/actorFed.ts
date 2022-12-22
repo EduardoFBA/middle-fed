@@ -59,8 +59,8 @@ actorFedRouter.post(
   async (req: Request, res: Response) => {
     const buf = await buffer(req);
     const rawBody = buf.toString("utf8");
-    // const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-    const message: AP.Activity = <AP.Activity>req.body;
+    const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+    // const message: AP.Activity = <AP.Activity>req.body;
 
     if (message.type == "Follow") {
       const followMessage: AP.Follow = <AP.Follow>message;
