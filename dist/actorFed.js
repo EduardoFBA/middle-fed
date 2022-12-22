@@ -65,6 +65,7 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0,
     res.send(yield (0, utils_1.list)("inbox"));
 }));
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("post inbox");
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
     const message = JSON.parse(rawBody);
@@ -83,11 +84,12 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
         // }
         console.log("followMessage", followMessage);
         yield (0, utils_1.save)("followers", followMessage);
+        const localDomain = req.app.get("localDomain");
         const acceptRequest = {
             "@context": "https://www.w3.org/ns/activitystreams",
-            id: `https://${req.app.get("localDomain")}/${(0, crypto_1.randomUUID)()}`,
+            id: `https://${localDomain}/${(0, crypto_1.randomUUID)()}`,
             type: "Accept",
-            actor: `https://${req.app.get("localDomain")}/u/${req.params.username}`,
+            actor: `https://${localDomain}/u/${req.params.username}`,
             object: followMessage,
         };
         // const accept = createAcceptActivity(
@@ -97,7 +99,12 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
         // );
         console.log("accept", acceptRequest);
         yield (0, utils_1.save)("accept", acceptRequest);
-        res.send(acceptRequest);
+        const actorInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString());
+        yield fetch(actorInfo.inbox, {
+            method: "POST",
+            body: JSON.stringify(acceptRequest),
+        });
+        res.end();
     }
     // if (message.type == "Undo") {
     //   // Undo a follow.

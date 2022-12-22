@@ -2,7 +2,7 @@ import { AP } from "activitypub-core-types";
 import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
-import { search, getWebfinger, save, list } from "./utils";
+import { search, getWebfinger, save, list, getActorInfo } from "./utils";
 import { createAcceptActivity } from "./utils-json";
 
 export const actorFedRouter = Router();
@@ -57,6 +57,7 @@ actorFedRouter.get(
 actorFedRouter.post(
   "/u/:username/inbox",
   async (req: Request, res: Response) => {
+    console.log("post inbox");
     const buf = await buffer(req);
     const rawBody = buf.toString("utf8");
     const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
@@ -80,11 +81,13 @@ actorFedRouter.post(
       console.log("followMessage", followMessage);
       await save("followers", followMessage);
 
+      const localDomain = req.app.get("localDomain");
+
       const acceptRequest = {
         "@context": "https://www.w3.org/ns/activitystreams",
-        id: `https://${req.app.get("localDomain")}/${randomUUID()}`,
+        id: `https://${localDomain}/${randomUUID()}`,
         type: "Accept",
-        actor: `https://${req.app.get("localDomain")}/u/${req.params.username}`,
+        actor: `https://${localDomain}/u/${req.params.username}`,
         object: followMessage,
       };
 
@@ -97,7 +100,15 @@ actorFedRouter.post(
       console.log("accept", acceptRequest);
       await save("accept", acceptRequest);
 
-      res.send(acceptRequest);
+      const actorInfo: AP.Actor = await getActorInfo(
+        (<URL>followMessage.actor).toString()
+      );
+      await fetch(<URL>actorInfo.inbox, {
+        method: "POST",
+        body: JSON.stringify(acceptRequest),
+      });
+
+      res.end();
     }
 
     // if (message.type == "Undo") {

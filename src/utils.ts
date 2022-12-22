@@ -1,3 +1,4 @@
+import { AP } from "activitypub-core-types";
 import { firestore } from "firebase-admin";
 import fetch from "node-fetch";
 
@@ -35,6 +36,11 @@ export async function search(
   });
 
   return docs;
+}
+
+export async function getActorInfo(actorId: string): Promise<AP.Actor> {
+  const promise = await fetch(actorId + ".json");
+  return await promise.json();
 }
 
 export async function getWebfinger(resource: string, localDomain: string) {
