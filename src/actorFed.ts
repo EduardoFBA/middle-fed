@@ -4,6 +4,7 @@ import { Request, Response, Router } from "express";
 import { Readable } from "stream";
 import { search, getWebfinger, save, list, getActorInfo } from "./utils";
 import { createAcceptActivity } from "./utils-json";
+import fetch from "node-fetch";
 
 export const actorFedRouter = Router();
 

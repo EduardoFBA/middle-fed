@@ -15,12 +15,16 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.actorFedRouter = void 0;
 const crypto_1 = require("crypto");
 const express_1 = require("express");
 const utils_1 = require("./utils");
 const utils_json_1 = require("./utils-json");
+const node_fetch_1 = __importDefault(require("node-fetch"));
 exports.actorFedRouter = (0, express_1.Router)();
 exports.actorFedRouter.get("/authorize_interaction", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
@@ -100,7 +104,7 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
         console.log("accept", acceptRequest);
         yield (0, utils_1.save)("accept", acceptRequest);
         const actorInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString());
-        yield fetch(actorInfo.inbox, {
+        yield (0, node_fetch_1.default)(actorInfo.inbox, {
             method: "POST",
             body: JSON.stringify(acceptRequest),
         });
