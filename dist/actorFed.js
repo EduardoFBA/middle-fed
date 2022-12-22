@@ -17,6 +17,7 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.actorFedRouter = void 0;
+const crypto_1 = require("crypto");
 const express_1 = require("express");
 const utils_1 = require("./utils");
 const utils_json_1 = require("./utils-json");
@@ -66,8 +67,8 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0,
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
-    const message = JSON.parse(rawBody);
-    // const message: AP.Activity = <AP.Activity>req.body;
+    // const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+    const message = req.body;
     if (message.type == "Follow") {
         const followMessage = message;
         if (followMessage.id == null)
@@ -80,8 +81,23 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
         //   console.log("Already Following")
         //   return res.end('already following');
         // }
+        console.log("followMessage", followMessage);
         yield (0, utils_1.save)("followers", followMessage);
-        res.send((0, utils_json_1.createAcceptActivity)(`${req.params.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
+        const acceptRequest = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            id: `https://${req.app.get("localDomain")}/${(0, crypto_1.randomUUID)()}`,
+            type: "Accept",
+            actor: `https://${req.app.get("localDomain")}/u/${req.params.username}`,
+            object: followMessage,
+        };
+        // const accept = createAcceptActivity(
+        //   `${req.params.username}@${req.app.get("localDomain")}`,
+        //   req.body.target,
+        //   "Follow"
+        // );
+        console.log("accept", acceptRequest);
+        yield (0, utils_1.save)("accept", acceptRequest);
+        res.send(acceptRequest);
     }
     // if (message.type == "Undo") {
     //   // Undo a follow.

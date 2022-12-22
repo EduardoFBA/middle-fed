@@ -1,4 +1,5 @@
 import { AP } from "activitypub-core-types";
+import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
 import { search, getWebfinger, save, list } from "./utils";
@@ -58,8 +59,8 @@ actorFedRouter.post(
   async (req: Request, res: Response) => {
     const buf = await buffer(req);
     const rawBody = buf.toString("utf8");
-    const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-    // const message: AP.Activity = <AP.Activity>req.body;
+    // const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+    const message: AP.Activity = <AP.Activity>req.body;
 
     if (message.type == "Follow") {
       const followMessage: AP.Follow = <AP.Follow>message;
@@ -76,15 +77,27 @@ actorFedRouter.post(
       //   return res.end('already following');
       // }
 
+      console.log("followMessage", followMessage);
       await save("followers", followMessage);
 
-      res.send(
-        createAcceptActivity(
-          `${req.params.username}@${req.app.get("localDomain")}`,
-          req.body.target,
-          "Follow"
-        )
-      );
+      const acceptRequest = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        id: `https://${req.app.get("localDomain")}/${randomUUID()}`,
+        type: "Accept",
+        actor: `https://${req.app.get("localDomain")}/u/${req.params.username}`,
+        object: followMessage,
+      };
+
+      // const accept = createAcceptActivity(
+      //   `${req.params.username}@${req.app.get("localDomain")}`,
+      //   req.body.target,
+      //   "Follow"
+      // );
+
+      console.log("accept", acceptRequest);
+      await save("accept", acceptRequest);
+
+      res.send(acceptRequest);
     }
 
     // if (message.type == "Undo") {
