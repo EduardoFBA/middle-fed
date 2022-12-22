@@ -4,6 +4,11 @@ import { createAcceptActivity } from "./utils-json";
 
 export const actorFedRouter = Router();
 
+actorFedRouter.get(
+  "/authorize_interaction",
+  (req: Request, res: Response) => {}
+);
+
 actorFedRouter.get("/u/:username", async (req: Request, res: Response) => {
   const domain = req.app.get("localDomain");
   const result = await search(

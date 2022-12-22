@@ -47,6 +47,10 @@ export function createWebfinger(name, domain) {
         type: "application/activity+json",
         href: `https://${domain}/u/${name}`,
       },
+      {
+        rel: "http://ostatus.org/schema/1.0/subscribe",
+        template: `https://${domain}/authorize_interaction?uri={uri}`,
+      },
     ],
   };
 }

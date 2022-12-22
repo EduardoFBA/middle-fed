@@ -14,6 +14,7 @@ const express_1 = require("express");
 const utils_1 = require("./utils");
 const utils_json_1 = require("./utils-json");
 exports.actorFedRouter = (0, express_1.Router)();
+exports.actorFedRouter.get("/authorize_interaction", (req, res) => { });
 exports.actorFedRouter.get("/u/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const domain = req.app.get("localDomain");
     const result = yield (0, utils_1.search)("actor", "id", `https://${domain}/u/${req.params.username}`);
