@@ -1,3 +1,4 @@
+import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
 import { search, getWebfinger, save, list } from "./utils";
@@ -57,9 +58,26 @@ actorFedRouter.post(
   async (req: Request, res: Response) => {
     const buf = await buffer(req);
     const rawBody = buf.toString("utf8");
-    console.log("authorize interaction", rawBody);
-    if (req.body) {
-      await save("inbox", req.body);
+    const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+    // const message: AP.Activity = <AP.Activity>req.body;
+
+    if (message.type == "Follow") {
+      const followMessage: AP.Follow = <AP.Follow>message;
+      if (followMessage.id == null) return;
+
+      // const collection = db.collection('followers');
+
+      // const actorID = (<URL>followMessage.actor).toString();
+      // const followDocRef = collection.doc(actorID.replace(/\//g, "_"));
+      // const followDoc = await followDocRef.get();
+
+      // if (followDoc.exists) {
+      //   console.log("Already Following")
+      //   return res.end('already following');
+      // }
+
+      await save("followers", followMessage);
+
       res.send(
         createAcceptActivity(
           `${req.params.username}@${req.app.get("localDomain")}`,
@@ -67,10 +85,19 @@ actorFedRouter.post(
           "Follow"
         )
       );
-    } else {
-      //error
-      res.send("ERROR");
     }
+
+    // if (message.type == "Undo") {
+    //   // Undo a follow.
+    //   const undoObject: AP.Undo = <AP.Undo>message;
+    //   if (undoObject == null || undoObject.id == null) return;
+    //   if (undoObject.object == null) return;
+    //   if ("actor" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
+
+    //   const docId = undoObject.actor.toString().replace(/\//g, "_");
+    //   const res = await db.collection('followers').doc(docId).delete();
+
+    //   console.log("Deleted", res)
   }
 );
 

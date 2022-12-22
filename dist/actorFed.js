@@ -66,15 +66,32 @@ exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0,
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
-    console.log("authorize interaction", rawBody);
-    if (req.body) {
-        yield (0, utils_1.save)("inbox", req.body);
+    const message = JSON.parse(rawBody);
+    // const message: AP.Activity = <AP.Activity>req.body;
+    if (message.type == "Follow") {
+        const followMessage = message;
+        if (followMessage.id == null)
+            return;
+        // const collection = db.collection('followers');
+        // const actorID = (<URL>followMessage.actor).toString();
+        // const followDocRef = collection.doc(actorID.replace(/\//g, "_"));
+        // const followDoc = await followDocRef.get();
+        // if (followDoc.exists) {
+        //   console.log("Already Following")
+        //   return res.end('already following');
+        // }
+        yield (0, utils_1.save)("followers", followMessage);
         res.send((0, utils_json_1.createAcceptActivity)(`${req.params.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
     }
-    else {
-        //error
-        res.send("ERROR");
-    }
+    // if (message.type == "Undo") {
+    //   // Undo a follow.
+    //   const undoObject: AP.Undo = <AP.Undo>message;
+    //   if (undoObject == null || undoObject.id == null) return;
+    //   if (undoObject.object == null) return;
+    //   if ("actor" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
+    //   const docId = undoObject.actor.toString().replace(/\//g, "_");
+    //   const res = await db.collection('followers').doc(docId).delete();
+    //   console.log("Deleted", res)
 }));
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ outbox: req.params.username });
