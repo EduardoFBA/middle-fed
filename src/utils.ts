@@ -14,8 +14,11 @@ export async function list(collection: string): Promise<any[]> {
   return docs;
 }
 
-export function save(collection: string, data: any) {
-  db.collection(collection).doc().set(data);
+export async function save(
+  collection: string,
+  data: any
+): Promise<firestore.WriteResult> {
+  return await db.collection(collection).doc().set(data);
 }
 
 export async function search(

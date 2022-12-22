@@ -20,32 +20,35 @@ actorFedRouter.get("/u/:username/followers", (req: Request, res: Response) => {
   res.send({ dvklsn: req.params.username });
 });
 
-actorFedRouter.get("/u/:username/inbox", (req: Request, res: Response) => {
-  save("inboxGET", req.body);
-});
+actorFedRouter.get(
+  "/u/:username/inbox",
+  async (req: Request, res: Response) => {
+    res.send(await list("inbox"));
+  }
+);
 
 actorFedRouter.post(
   "/u/:username/inbox",
   async (req: Request, res: Response) => {
-    console.log("log", req.body);
-    // if (req.body) {
-    console.log("sending accept");
-    res.send(
-      createAcceptActivity(
-        `${req.params.username}@${req.app.get("localDomain")}`,
-        req.body.target,
-        "Follow"
-      )
-    );
-    // } else {
-    //   console.log("follow activity", "saving actor in followers");
-    //   save("followers", req.body);
-    // }
+    console.log("request body", req.body);
+    if (req.body) {
+      await save("inbox", req.body);
+      res.send(
+        createAcceptActivity(
+          `${req.params.username}@${req.app.get("localDomain")}`,
+          req.body.target,
+          "Follow"
+        )
+      );
+    } else {
+      //error
+      res.send("ERROR");
+    }
   }
 );
 
 actorFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
-  res.send({ dvklsn: req.params.username });
+  res.send({ outbox: req.params.username });
 });
 
 actorFedRouter.get(

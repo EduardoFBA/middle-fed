@@ -26,21 +26,22 @@ exports.actorFedRouter.get("/u/:username", (req, res) => __awaiter(void 0, void 
 exports.actorFedRouter.get("/u/:username/followers", (req, res) => {
     res.send({ dvklsn: req.params.username });
 });
-exports.actorFedRouter.get("/u/:username/inbox", (req, res) => {
-    (0, utils_1.save)("inboxGET", req.body);
-});
+exports.actorFedRouter.get("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.send(yield (0, utils_1.list)("inbox"));
+}));
 exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("log", req.body);
-    // if (req.body) {
-    console.log("sending accept");
-    res.send((0, utils_json_1.createAcceptActivity)(`${req.params.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
-    // } else {
-    //   console.log("follow activity", "saving actor in followers");
-    //   save("followers", req.body);
-    // }
+    console.log("request body", req.body);
+    if (req.body) {
+        yield (0, utils_1.save)("inbox", req.body);
+        res.send((0, utils_json_1.createAcceptActivity)(`${req.params.username}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
+    }
+    else {
+        //error
+        res.send("ERROR");
+    }
 }));
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
-    res.send({ dvklsn: req.params.username });
+    res.send({ outbox: req.params.username });
 });
 exports.actorFedRouter.get("/.well-known/webfinger", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (req.query.resource) {

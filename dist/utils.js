@@ -29,7 +29,9 @@ function list(collection) {
 }
 exports.list = list;
 function save(collection, data) {
-    db.collection(collection).doc().set(data);
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield db.collection(collection).doc().set(data);
+    });
 }
 exports.save = save;
 function search(collection, field, value) {
