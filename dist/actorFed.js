@@ -15,23 +15,13 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.actorFedRouter = void 0;
+const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 const express_1 = require("express");
 const utils_1 = require("./utils");
-const utils_json_1 = require("./utils-json");
-const node_fetch_1 = __importDefault(require("node-fetch"));
 exports.actorFedRouter = (0, express_1.Router)();
-exports.actorFedRouter.get("/authorize_interaction", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const buf = yield buffer(req);
-    const rawBody = buf.toString("utf8");
-    console.log("authorize interaction", rawBody);
-    res.send((0, utils_json_1.createAcceptActivity)(`${req.params.uri}@${req.app.get("localDomain")}`, req.body.target, "Follow"));
-}));
 function buffer(readable) {
     var readable_1, readable_1_1;
     var e_1, _a;
@@ -73,42 +63,27 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
     const message = JSON.parse(rawBody);
-    // const message: AP.Activity = <AP.Activity>req.body;
     if (message.type == "Follow") {
         const followMessage = message;
         if (followMessage.id == null)
             return;
-        // const collection = db.collection('followers');
-        // const actorID = (<URL>followMessage.actor).toString();
-        // const followDocRef = collection.doc(actorID.replace(/\//g, "_"));
-        // const followDoc = await followDocRef.get();
-        // if (followDoc.exists) {
-        //   console.log("Already Following")
-        //   return res.end('already following');
-        // }
         console.log("followMessage", followMessage);
         yield (0, utils_1.save)("followers", followMessage);
         const localDomain = req.app.get("localDomain");
-        const acceptRequest = {
-            "@context": "https://www.w3.org/ns/activitystreams",
-            id: `https://${localDomain}/${(0, crypto_1.randomUUID)()}`,
-            type: "Accept",
-            actor: `https://${localDomain}/u/${req.params.username}`,
-            object: followMessage,
-        };
-        // const accept = createAcceptActivity(
-        //   `${req.params.username}@${req.app.get("localDomain")}`,
-        //   req.body.target,
-        //   "Follow"
-        // );
-        console.log("accept", acceptRequest);
-        yield (0, utils_1.save)("accept", acceptRequest);
-        const actorInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString());
-        yield (0, node_fetch_1.default)(actorInfo.inbox, {
-            method: "POST",
-            body: JSON.stringify(acceptRequest),
-        });
-        res.end();
+        const accept = {};
+        accept["@context"] = "https://www.w3.org/ns/activitystreams";
+        accept.type = activitypub_core_types_1.AP.ActivityTypes.ACCEPT;
+        accept.id = new URL(`https://${localDomain}/${(0, crypto_1.randomUUID)()}`);
+        accept.actor = new URL(`https://${localDomain}/u/${req.params.username}`);
+        accept.object = followMessage;
+        console.log("accept", accept);
+        yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
+        const actorInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
+        console.log("localactorinfo", accept.actor.toString());
+        const localActorInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString());
+        console.log("send signed request", actorInfo);
+        const response = yield (0, utils_1.sendSignedRequest)(actorInfo.inbox, "POST", accept, localActorInfo.publicKey.id, localActorInfo.privateKey);
+        console.log("response", response);
     }
     // if (message.type == "Undo") {
     //   // Undo a follow.
@@ -119,6 +94,7 @@ exports.actorFedRouter.post("/u/:username/inbox", (req, res) => __awaiter(void 0
     //   const docId = undoObject.actor.toString().replace(/\//g, "_");
     //   const res = await db.collection('followers').doc(docId).delete();
     //   console.log("Deleted", res)
+    res.end("inbox finish");
 }));
 exports.actorFedRouter.get("/u/:username/outbox", (req, res) => {
     res.send({ outbox: req.params.username });

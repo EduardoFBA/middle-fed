@@ -37,7 +37,7 @@ actorApiRouter.post("/actor/", (req: Request, res: Response) => {
     },
     (err, publicKey, privateKey) => {
       const domain = req.app.get("localDomain");
-      const actorRecord = createActor(account, domain, publicKey);
+      const actorRecord = createActor(account, domain, publicKey, privateKey);
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = crypto.randomBytes(16).toString("hex");
       save("actor", actorRecord);

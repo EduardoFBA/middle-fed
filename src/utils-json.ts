@@ -14,7 +14,7 @@ export function createAcceptActivity(
   };
 }
 
-export function createActor(name, domain, pubkey) {
+export function createActor(name, domain, pubkey, prikey) {
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
@@ -34,6 +34,7 @@ export function createActor(name, domain, pubkey) {
       owner: `https://${domain}/u/${name}`,
       publicKeyPem: pubkey,
     },
+    privateKey: prikey,
   };
 }
 

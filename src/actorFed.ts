@@ -2,27 +2,16 @@ import { AP } from "activitypub-core-types";
 import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
-import { search, getWebfinger, save, list, getActorInfo } from "./utils";
-import { createAcceptActivity } from "./utils-json";
-import fetch from "node-fetch";
+import {
+  search,
+  getWebfinger,
+  save,
+  list,
+  getActorInfo,
+  sendSignedRequest,
+} from "./utils";
 
 export const actorFedRouter = Router();
-
-actorFedRouter.get(
-  "/authorize_interaction",
-  async (req: Request, res: Response) => {
-    const buf = await buffer(req);
-    const rawBody = buf.toString("utf8");
-    console.log("authorize interaction", rawBody);
-    res.send(
-      createAcceptActivity(
-        `${req.params.uri}@${req.app.get("localDomain")}`,
-        req.body.target,
-        "Follow"
-      )
-    );
-  }
-);
 
 async function buffer(readable: Readable) {
   const chunks = [];
@@ -62,54 +51,42 @@ actorFedRouter.post(
     const buf = await buffer(req);
     const rawBody = buf.toString("utf8");
     const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-    // const message: AP.Activity = <AP.Activity>req.body;
 
     if (message.type == "Follow") {
       const followMessage: AP.Follow = <AP.Follow>message;
       if (followMessage.id == null) return;
-
-      // const collection = db.collection('followers');
-
-      // const actorID = (<URL>followMessage.actor).toString();
-      // const followDocRef = collection.doc(actorID.replace(/\//g, "_"));
-      // const followDoc = await followDocRef.get();
-
-      // if (followDoc.exists) {
-      //   console.log("Already Following")
-      //   return res.end('already following');
-      // }
 
       console.log("followMessage", followMessage);
       await save("followers", followMessage);
 
       const localDomain = req.app.get("localDomain");
 
-      const acceptRequest = {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        id: `https://${localDomain}/${randomUUID()}`,
-        type: "Accept",
-        actor: `https://${localDomain}/u/${req.params.username}`,
-        object: followMessage,
-      };
+      const accept = <AP.Accept>{};
+      accept["@context"] = "https://www.w3.org/ns/activitystreams";
+      accept.type = AP.ActivityTypes.ACCEPT;
+      accept.id = new URL(`https://${localDomain}/${randomUUID()}`);
+      accept.actor = new URL(`https://${localDomain}/u/${req.params.username}`);
+      accept.object = followMessage;
 
-      // const accept = createAcceptActivity(
-      //   `${req.params.username}@${req.app.get("localDomain")}`,
-      //   req.body.target,
-      //   "Follow"
-      // );
+      console.log("accept", accept);
+      await save("accept", JSON.parse(JSON.stringify(accept)));
 
-      console.log("accept", acceptRequest);
-      await save("accept", acceptRequest);
-
-      const actorInfo: AP.Actor = await getActorInfo(
-        (<URL>followMessage.actor).toString()
+      const actorInfo: any = await getActorInfo(
+        (<URL>followMessage.actor).toString() + ".json"
       );
-      await fetch(<URL>actorInfo.inbox, {
-        method: "POST",
-        body: JSON.stringify(acceptRequest),
-      });
 
-      res.end();
+      console.log("localactorinfo", accept.actor.toString());
+      const localActorInfo: any = await getActorInfo(accept.actor.toString());
+
+      console.log("send signed request", actorInfo);
+      const response = await sendSignedRequest(
+        <URL>actorInfo.inbox,
+        "POST",
+        accept,
+        localActorInfo.publicKey.id,
+        localActorInfo.privateKey
+      );
+      console.log("response", response);
     }
 
     // if (message.type == "Undo") {
@@ -123,6 +100,8 @@ actorFedRouter.post(
     //   const res = await db.collection('followers').doc(docId).delete();
 
     //   console.log("Deleted", res)
+
+    res.end("inbox finish");
   }
 );
 

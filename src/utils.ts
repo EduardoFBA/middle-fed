@@ -1,5 +1,6 @@
 import { AP } from "activitypub-core-types";
 import { firestore } from "firebase-admin";
+import * as crypto from "crypto";
 import fetch from "node-fetch";
 
 const db = firestore();
@@ -38,8 +39,8 @@ export async function search(
   return docs;
 }
 
-export async function getActorInfo(actorId: string): Promise<AP.Actor> {
-  const promise = await fetch(actorId + ".json");
+export async function getActorInfo(actorId: string): Promise<any> {
+  const promise = await fetch(actorId);
   return await promise.json();
 }
 
@@ -68,4 +69,85 @@ export function extractHandles(resource: string): string[] {
   return string.startsWith("@")
     ? [string.split("@")[1], string.split("@")[2]]
     : [string.split("@")[0], string.split("@")[1]];
+}
+
+export async function sendSignedRequest(
+  endpoint: URL,
+  method: string,
+  object: AP.Activity,
+  publicKeyId: string,
+  privateKey: string
+): Promise<Response> {
+  const activity = JSON.stringify(object);
+  const requestHeaders = {
+    host: endpoint.hostname,
+    date: new Date().toUTCString(),
+    digest: `SHA-256=${crypto
+      .createHash("sha256")
+      .update(activity)
+      .digest("base64")}`,
+  };
+
+  // Generate the signature header
+  const signature = sign(
+    endpoint,
+    method,
+    requestHeaders,
+    publicKeyId,
+    privateKey
+  );
+
+  console.log("fetching", endpoint);
+  return await fetch(endpoint, {
+    method,
+    body: activity,
+    headers: {
+      "content-type": "application/activity+json",
+      accept: "application/activity+json",
+      ...requestHeaders,
+      signature: signature,
+    },
+  });
+}
+
+function sign(
+  url: URL,
+  method: string,
+  headers: any,
+  publicKeyId: string,
+  privateKey: string
+) {
+  const { host, pathname, search } = new URL(url);
+  const target = `${pathname}${search}`;
+  headers.date = headers.date || new Date().toUTCString();
+  headers.host = headers.host || host;
+
+  const headerNames = ["host", "date", "digest"];
+
+  const stringToSign = getSignString(target, method, headers, headerNames);
+
+  const signature = signSha256(privateKey, stringToSign).toString("base64");
+
+  return `keyId="${publicKeyId}",headers="${headerNames.join(
+    " "
+  )}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`;
+}
+
+function getSignString(target, method, headers, headerNames) {
+  const requestTarget = `${method.toLowerCase()} ${target}`;
+  headers = {
+    ...headers,
+    "(request-target)": requestTarget,
+  };
+  return headerNames
+    .map((header) => `${header.toLowerCase()}: ${headers[header]}`)
+    .join("\n");
+}
+
+function signSha256(privateKey: string, stringToSign: string) {
+  const signer: crypto.Sign = crypto.createSign("sha256");
+  signer.update(stringToSign);
+  const signature: Buffer = signer.sign(privateKey);
+  signer.end();
+  return signature;
 }

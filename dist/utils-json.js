@@ -13,7 +13,7 @@ function createAcceptActivity(actorId, targetId, activityType) {
     };
 }
 exports.createAcceptActivity = createAcceptActivity;
-function createActor(name, domain, pubkey) {
+function createActor(name, domain, pubkey, prikey) {
     return {
         "@context": [
             "https://www.w3.org/ns/activitystreams",
@@ -31,6 +31,7 @@ function createActor(name, domain, pubkey) {
             owner: `https://${domain}/u/${name}`,
             publicKeyPem: pubkey,
         },
+        privateKey: prikey,
     };
 }
 exports.createActor = createActor;
