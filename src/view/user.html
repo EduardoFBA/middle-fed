@@ -1,0 +1,18 @@
+user html
+<div id="div"></div>
+
+<script>
+    const div = document.getElementById("div");
+    div.textContent = "loading...";
+ 
+    const username = document.URL.slice(document.URL.lastIndexOf("/") + 1);
+    
+    const xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            div.innerHTML = this.responseText;
+        }
+    };
+    xhttp.open("GET", `http://localhost:3000/u/${username}.json`, true);
+    xhttp.send();
+</script>

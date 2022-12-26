@@ -23,20 +23,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.actorApiRouter = void 0;
+exports.userApiRouter = void 0;
 const express_1 = require("express");
 const crypto = __importStar(require("crypto"));
-const utils_1 = require("./utils");
-const utils_json_1 = require("./utils-json");
-exports.actorApiRouter = (0, express_1.Router)();
-exports.actorApiRouter.get("/actor/", (req, res) => {
-    res.send({ dvklsn: 333333333333333 });
-    // res.sendFile("app.html", { root: "dist" }, (err) => {
-    //   res.end();
-    //   if (err) throw err;
-    // });
+const utils_1 = require("../utils");
+const utils_json_1 = require("../utils-json");
+exports.userApiRouter = (0, express_1.Router)();
+exports.userApiRouter.get("/u", (req, res) => {
+    res.sendFile("user.html", { root: "src/view" }, (err) => {
+        if (err)
+            res.send(err);
+    });
 });
-exports.actorApiRouter.post("/actor/", (req, res) => {
+exports.userApiRouter.post("/user/", (req, res) => {
     const account = req.body.account;
     if (account === undefined) {
         return res.status(400).json({
@@ -56,12 +55,12 @@ exports.actorApiRouter.post("/actor/", (req, res) => {
         },
     }, (err, publicKey, privateKey) => {
         const domain = req.app.get("localDomain");
-        const actorRecord = (0, utils_json_1.createActor)(account, domain, publicKey, privateKey);
+        const userRecord = (0, utils_json_1.createUser)(account, domain, publicKey, privateKey);
         const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
         const apikey = crypto.randomBytes(16).toString("hex");
-        (0, utils_1.save)("actor", actorRecord);
+        (0, utils_1.save)("user", userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
         res.status(200).json({ msg: "ok", apikey });
     });
 });
-//# sourceMappingURL=actorApi.js.map
+//# sourceMappingURL=userApi.js.map

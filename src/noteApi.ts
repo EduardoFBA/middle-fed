@@ -11,7 +11,7 @@ noteApiRouter.get("/note/send", async (req: Request, res: Response) => {
 
     id: "https://duard@middle-fed.onrender.com/first-create",
     type: "Create",
-    actor: "https://middle-fed.onrender.com/u/duard",
+    user: "https://middle-fed.onrender.com/u/duard",
 
     object: {
       id: "https://my-example.com/first-object",

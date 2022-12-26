@@ -39,8 +39,8 @@ export async function search(
   return docs;
 }
 
-export async function getActorInfo(actorId: string): Promise<any> {
-  const promise = await fetch(actorId);
+export async function getUserInfo(userId: string): Promise<any> {
+  const promise = await fetch(userId);
   return await promise.json();
 }
 

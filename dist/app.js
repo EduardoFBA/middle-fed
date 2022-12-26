@@ -35,6 +35,7 @@ admin.initializeApp({
 const express_1 = __importDefault(require("express"));
 const routes_1 = require("./routes");
 const body_parser_1 = __importDefault(require("body-parser"));
+const webfinger_1 = require("./well-known/webfinger");
 const cors = require("cors");
 exports.app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ exports.app.use(express_1.default.json());
 exports.app.use(body_parser_1.default.urlencoded({ extended: true }));
 exports.app.use("/api/", cors(), routes_1.apiRoutes);
 exports.app.use("/", cors(), routes_1.fedRoutes);
+exports.app.use("/.well-known", cors(), webfinger_1.wellKnownRouter);
 exports.app.listen(PORT, () => {
     return console.log(`Express is listening at http://localhost:${PORT}`);
 });

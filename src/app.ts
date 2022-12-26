@@ -7,6 +7,7 @@ admin.initializeApp({
 import express, { Express } from "express";
 import { apiRoutes, fedRoutes } from "./routes";
 import bodyParser from "body-parser";
+import { wellKnownRouter } from "./well-known/webfinger";
 
 const cors = require("cors");
 
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/", cors(), apiRoutes);
 app.use("/", cors(), fedRoutes);
+app.use("/.well-known", cors(), wellKnownRouter);
 app.listen(PORT, () => {
   return console.log(`Express is listening at http://localhost:${PORT}`);
 });

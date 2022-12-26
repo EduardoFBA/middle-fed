@@ -19,7 +19,7 @@ exports.noteApiRouter.get("/note/send", (req, res) => __awaiter(void 0, void 0, 
         "@context": "https://www.w3.org/ns/activitystreams",
         id: "https://duard@middle-fed.onrender.com/first-create",
         type: "Create",
-        actor: "https://middle-fed.onrender.com/u/duard",
+        user: "https://middle-fed.onrender.com/u/duard",
         object: {
             id: "https://my-example.com/first-object",
             type: "Note",

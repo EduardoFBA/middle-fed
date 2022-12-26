@@ -1,20 +1,17 @@
 import { Request, Response, Router } from "express";
 import * as crypto from "crypto";
-import { save } from "./utils";
-import { createActor, createWebfinger } from "./utils-json";
+import { save } from "../utils";
+import { createUser, createWebfinger } from "../utils-json";
 
-export const actorApiRouter = Router();
+export const userApiRouter = Router();
 
-actorApiRouter.get("/actor/", (req: Request, res: Response) => {
-  res.send({ dvklsn: 333333333333333 });
-  // res.sendFile("app.html", { root: "dist" }, (err) => {
-  //   res.end();
-
-  //   if (err) throw err;
-  // });
+userApiRouter.get("/u", (req: Request, res: Response) => {
+  res.sendFile("user.html", { root: "src/view" }, (err) => {
+    if (err) res.send(err);
+  });
 });
 
-actorApiRouter.post("/actor/", (req: Request, res: Response) => {
+userApiRouter.post("/user/", (req: Request, res: Response) => {
   const account = req.body.account;
   if (account === undefined) {
     return res.status(400).json({
@@ -37,10 +34,10 @@ actorApiRouter.post("/actor/", (req: Request, res: Response) => {
     },
     (err, publicKey, privateKey) => {
       const domain = req.app.get("localDomain");
-      const actorRecord = createActor(account, domain, publicKey, privateKey);
+      const userRecord = createUser(account, domain, publicKey, privateKey);
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = crypto.randomBytes(16).toString("hex");
-      save("actor", actorRecord);
+      save("user", userRecord);
       save("webfinger", webfingerRecord);
       res.status(200).json({ msg: "ok", apikey });
     }

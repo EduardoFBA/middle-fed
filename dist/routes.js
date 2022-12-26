@@ -1,11 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fedRoutes = exports.apiRoutes = void 0;
+exports.wellKnownRoutes = exports.fedRoutes = exports.apiRoutes = void 0;
 const express_1 = require("express");
-const actorApi_1 = require("./actorApi");
-const actorFed_1 = require("./actorFed");
+const userApi_1 = require("./api/userApi");
+const userFed_1 = require("./activitypub/userFed");
+const webfinger_1 = require("./well-known/webfinger");
 exports.apiRoutes = (0, express_1.Router)();
-exports.apiRoutes.use(actorApi_1.actorApiRouter);
+exports.apiRoutes.use(userApi_1.userApiRouter);
 exports.fedRoutes = (0, express_1.Router)();
-exports.fedRoutes.use(actorFed_1.actorFedRouter);
+exports.fedRoutes.use(userFed_1.userFedRouter);
+exports.wellKnownRoutes = (0, express_1.Router)();
+webfinger_1.wellKnownRouter.use(webfinger_1.wellKnownRouter);
 //# sourceMappingURL=routes.js.map

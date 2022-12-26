@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { actorApiRouter } from "./actorApi";
-import { actorFedRouter } from "./actorFed";
+import { userApiRouter } from "./api/userApi";
+import { userFedRouter } from "./activitypub/userFed";
+import { wellKnownRouter } from "./well-known/webfinger";
 
 export const apiRoutes = Router();
-
-apiRoutes.use(actorApiRouter);
+apiRoutes.use(userApiRouter);
 
 export const fedRoutes = Router();
+fedRoutes.use(userFedRouter);
 
-fedRoutes.use(actorFedRouter);
+export const wellKnownRoutes = Router();
+wellKnownRouter.use(wellKnownRouter);

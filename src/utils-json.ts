@@ -1,20 +1,4 @@
-export function createAcceptActivity(
-  actorId: string,
-  targetId: string,
-  activityType: string
-) {
-  return {
-    "@context": "https://www.w3.org/ns/activitystreams",
-    type: "Accept",
-    actor: actorId,
-    object: {
-      type: activityType,
-      actor: targetId,
-    },
-  };
-}
-
-export function createActor(name, domain, pubkey, prikey) {
+export function createUser(name, domain, pubkey, prikey) {
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
@@ -47,10 +31,6 @@ export function createWebfinger(name, domain) {
         rel: "self",
         type: "application/activity+json",
         href: `https://${domain}/u/${name}`,
-      },
-      {
-        rel: "http://ostatus.org/schema/1.0/subscribe",
-        template: `https://${domain}/authorize_interaction?uri={uri}`,
       },
     ],
   };

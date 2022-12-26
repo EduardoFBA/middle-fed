@@ -1,19 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createActor = exports.createAcceptActivity = void 0;
-function createAcceptActivity(actorId, targetId, activityType) {
-    return {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        type: "Accept",
-        actor: actorId,
-        object: {
-            type: activityType,
-            actor: targetId,
-        },
-    };
-}
-exports.createAcceptActivity = createAcceptActivity;
-function createActor(name, domain, pubkey, prikey) {
+exports.createWebfinger = exports.createUser = void 0;
+function createUser(name, domain, pubkey, prikey) {
     return {
         "@context": [
             "https://www.w3.org/ns/activitystreams",
@@ -34,7 +22,7 @@ function createActor(name, domain, pubkey, prikey) {
         privateKey: prikey,
     };
 }
-exports.createActor = createActor;
+exports.createUser = createUser;
 function createWebfinger(name, domain) {
     return {
         subject: `acct:${name}@${domain}`,
@@ -43,10 +31,6 @@ function createWebfinger(name, domain) {
                 rel: "self",
                 type: "application/activity+json",
                 href: `https://${domain}/u/${name}`,
-            },
-            {
-                rel: "http://ostatus.org/schema/1.0/subscribe",
-                template: `https://${domain}/authorize_interaction?uri={uri}`,
             },
         ],
     };

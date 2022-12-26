@@ -2,16 +2,9 @@ import { AP } from "activitypub-core-types";
 import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
-import {
-  search,
-  getWebfinger,
-  save,
-  list,
-  getActorInfo,
-  sendSignedRequest,
-} from "./utils";
+import { getUserInfo, list, save, search, sendSignedRequest } from "../utils";
 
-export const actorFedRouter = Router();
+export const userFedRouter = Router();
 
 async function buffer(readable: Readable) {
   const chunks = [];
@@ -21,30 +14,44 @@ async function buffer(readable: Readable) {
   return Buffer.concat(chunks);
 }
 
-actorFedRouter.get("/u/:username", async (req: Request, res: Response) => {
-  const domain = req.app.get("localDomain");
-  const result = await search(
-    "actor",
-    "id",
-    `https://${domain}/u/${req.params.username}`
-  );
-  if (result.length) {
-    res.send(result[0]);
-  } else throw "No account found";
+userFedRouter.get("/u/:username", async (req: Request, res: Response) => {
+  const isJson = req.params.username.endsWith(".json");
+  const username = isJson
+    ? req.params.username.slice(0, -5)
+    : req.params.username;
+
+  const result = await search("actor", "preferredUsername", username);
+  if (!result.length) res.send({ error: "no account found" });
+  else {
+    if (isJson) {
+      res.send(result[0]);
+    } else {
+      res.sendFile("user.html", { root: "src/view" }, (err) => {
+        if (err) res.send(err);
+      });
+    }
+  }
 });
 
-actorFedRouter.get("/u/:username/followers", (req: Request, res: Response) => {
+userFedRouter.get("/u/:username.json", async (req: Request, res: Response) => {
+  const result = await search(
+    "actor",
+    "preferredUsername",
+    req.params.username
+  );
+  if (result.length) res.send(result[0]);
+  else res.send({ error: "no account found json" });
+});
+
+userFedRouter.get("/u/:username/followers", (req: Request, res: Response) => {
   res.send({ dvklsn: req.params.username });
 });
 
-actorFedRouter.get(
-  "/u/:username/inbox",
-  async (req: Request, res: Response) => {
-    res.send(await list("inbox"));
-  }
-);
+userFedRouter.get("/u/:username/inbox", async (req: Request, res: Response) => {
+  res.send(await list("inbox"));
+});
 
-actorFedRouter.post(
+userFedRouter.post(
   "/u/:username/inbox",
   async (req: Request, res: Response) => {
     console.log("post inbox");
@@ -71,20 +78,20 @@ actorFedRouter.post(
       console.log("accept", accept);
       await save("accept", JSON.parse(JSON.stringify(accept)));
 
-      const actorInfo: any = await getActorInfo(
+      const userInfo: any = await getUserInfo(
         (<URL>followMessage.actor).toString() + ".json"
       );
 
-      console.log("localactorinfo", accept.actor.toString());
-      const localActorInfo: any = await getActorInfo(accept.actor.toString());
+      console.log("localuserinfo", accept.actor.toString());
+      const localUserInfo: any = await getUserInfo(accept.actor.toString());
 
-      console.log("send signed request", actorInfo);
+      console.log("send signed request", userInfo);
       const response = await sendSignedRequest(
-        <URL>actorInfo.inbox,
+        <URL>userInfo.inbox,
         "POST",
         accept,
-        localActorInfo.publicKey.id,
-        localActorInfo.privateKey
+        localUserInfo.publicKey.id,
+        localUserInfo.privateKey
       );
       console.log("response", response);
     }
@@ -94,9 +101,9 @@ actorFedRouter.post(
     //   const undoObject: AP.Undo = <AP.Undo>message;
     //   if (undoObject == null || undoObject.id == null) return;
     //   if (undoObject.object == null) return;
-    //   if ("actor" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
+    //   if ("user" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
 
-    //   const docId = undoObject.actor.toString().replace(/\//g, "_");
+    //   const docId = undoObject.user.toString().replace(/\//g, "_");
     //   const res = await db.collection('followers').doc(docId).delete();
 
     //   console.log("Deleted", res)
@@ -105,19 +112,6 @@ actorFedRouter.post(
   }
 );
 
-actorFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
+userFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
   res.send({ outbox: req.params.username });
 });
-
-actorFedRouter.get(
-  "/.well-known/webfinger",
-  async (req: Request, res: Response) => {
-    if (req.query.resource) {
-      const domain = req.app.get("localDomain");
-      res.send(await getWebfinger(req.query.resource as string, domain));
-      return;
-    }
-
-    throw "No account provided";
-  }
-);
