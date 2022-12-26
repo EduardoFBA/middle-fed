@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import * as crypto from "crypto";
-import { save } from "../utils";
-import { createUser, createWebfinger } from "../utils-json";
+import { save } from "../../utils";
+import { createUser, createWebfinger } from "../../utils-json";
 
 export const userApiRouter = Router();
 

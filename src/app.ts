@@ -7,7 +7,7 @@ admin.initializeApp({
 import express, { Express } from "express";
 import { apiRoutes, fedRoutes } from "./routes";
 import bodyParser from "body-parser";
-import { wellKnownRouter } from "./well-known/webfinger";
+import { wellKnownRouter } from "./controller/well-known/webfinger";
 
 const cors = require("cors");
 

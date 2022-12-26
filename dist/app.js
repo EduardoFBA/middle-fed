@@ -35,7 +35,7 @@ admin.initializeApp({
 const express_1 = __importDefault(require("express"));
 const routes_1 = require("./routes");
 const body_parser_1 = __importDefault(require("body-parser"));
-const webfinger_1 = require("./well-known/webfinger");
+const webfinger_1 = require("./controller/well-known/webfinger");
 const cors = require("cors");
 exports.app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;

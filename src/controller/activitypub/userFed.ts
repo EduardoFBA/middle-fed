@@ -2,7 +2,13 @@ import { AP } from "activitypub-core-types";
 import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
-import { getUserInfo, list, save, search, sendSignedRequest } from "../utils";
+import {
+  getUserInfo,
+  list,
+  save,
+  search,
+  sendSignedRequest,
+} from "../../utils";
 
 export const userFedRouter = Router();
 

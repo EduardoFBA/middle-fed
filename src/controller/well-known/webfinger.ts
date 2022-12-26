@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { getWebfinger } from "../utils";
+import { getWebfinger } from "../../utils";
 
 export const wellKnownRouter = Router();
 

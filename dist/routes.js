@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.wellKnownRoutes = exports.fedRoutes = exports.apiRoutes = void 0;
 const express_1 = require("express");
-const userApi_1 = require("./api/userApi");
-const userFed_1 = require("./activitypub/userFed");
-const webfinger_1 = require("./well-known/webfinger");
+const userApi_1 = require("./controller/api/userApi");
+const userFed_1 = require("./controller/activitypub/userFed");
+const webfinger_1 = require("./controller/well-known/webfinger");
 exports.apiRoutes = (0, express_1.Router)();
 exports.apiRoutes.use(userApi_1.userApiRouter);
 exports.fedRoutes = (0, express_1.Router)();
