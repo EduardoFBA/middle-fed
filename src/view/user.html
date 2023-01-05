@@ -3,30 +3,53 @@ user html
 
 <script>
     const div = document.getElementById("div");
-    div.textContent = "loading...";
  
     const username = document.URL.slice(document.URL.lastIndexOf("/") + 1);
-    
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
+    const button = document.createElement("button");
+    button.id = "follow"
+    button.innerHTML = "follow"
+    div.appendChild(button);
+
+    button.onclick =  function() {
+        const followRequest = new XMLHttpRequest();
+        followRequest.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-            div.innerHTML = this.responseText;
-            
-            const button = document.createElement("button");
-            button.innerHTML = "button";
-            div.appendChild(button);
-            button.onclick =  function() {
-                const followRequest = new XMLHttpRequest();
-                followRequest.onreadystatechange = function() {
-                    button.innerHTML = "followed";
-                }
-                
-                xhttp.open("POST", `http://localhost:3000/activity/${username}/follow/@zofiaromaszewski@mstdn.social`, true);
-                xhttp.send();
+                button.innerHTML = "followed";
+            }
+        }
+        
+        followRequest.open("POST", `http://localhost:3000/activity/${username}/follow/@zofiaromaszewski@mstdn.social`, true);
+        followRequest.send();
+    }
+
+    // const userJson = new XMLHttpRequest();
+    // userJson.onreadystatechange = function() {
+    //         if (this.readyState == 4 && this.status == 200) {
+    //         div.innerHTML = this.responseText;
+    //         div.appendChild(button);
+    //     }
+    // };
+    // userJson.open("GET", `http://localhost:3000/u/${username}.json`, true);
+    // userJson.send();
+    
+    const followersRequest = new XMLHttpRequest();
+    followersRequest.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            const followersTitle = document.createElement('p');
+            followersTitle.innerHTML = "Followers";
+            div.appendChild(followersTitle);
+
+            const followersList = document.createElement('ul');
+            div.appendChild(followersList);
+            const json = JSON.parse(this.responseText)
+            for(const follower of json){
+                const item = document.createElement('li');
+                item.innerHTML = follower.object;
+                followersList.appendChild(item);
             }
         }
     };
-    xhttp.open("GET", `http://localhost:3000/u/${username}.json`, true);
-    xhttp.send();
+    followersRequest.open("GET", `http://localhost:3000/u/${username}/followers`, true);
+    followersRequest.send();
 
 </script>

@@ -65,15 +65,8 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
     }
 }));
-router.get("/:username.json", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield (0, utils_1.search)("actor", "preferredUsername", req.params.username);
-    if (result.length)
-        res.send(result[0]);
-    else
-        res.send({ error: "no account found json" });
-}));
 router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.list)("followers"));
+    res.send(yield (0, utils_1.search)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 router.get("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(yield (0, utils_1.list)("inbox"));
@@ -93,8 +86,8 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
         console.log("accept", accept);
         yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
         const userInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
-        console.log("localuserinfo", accept.actor.toString());
         const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString());
+        console.log("LOCAL USER INFO", localUserInfo);
         console.log("send signed request", userInfo);
         const response = yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
         console.log("response", response);

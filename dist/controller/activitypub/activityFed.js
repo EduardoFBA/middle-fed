@@ -17,10 +17,12 @@ const utils_json_1 = require("../../utils-json");
 exports.activityFedRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.activityFedRouter.use("/activity", router);
-router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send({ test: "ing" });
-}));
-router.post("/:username/delete/:target/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+/**
+ * Deletes an activity
+ * @param activityId - id of the activity to delete
+ */
+router.delete("/delete/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (0, utils_1.search)("", "id", req.params.activityId);
     const localDomain = req.app.get("localDomain");
     const webfingerTarget = yield (0, utils_1.getWebfinger)(req.params.target);
     const selfTarget = webfingerTarget.links.filter((link) => {
@@ -31,15 +33,19 @@ router.post("/:username/delete/:target/:activityId", (req, res) => __awaiter(voi
     const username = req.params.username;
     const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
     const follow = (0, utils_json_1.createFollowActivity)(username, localDomain, new URL(targetId));
-    console.log("follow", follow);
     const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
     if (response.ok) {
         (0, utils_1.save)("following", JSON.parse(JSON.stringify(follow)));
-        res.send(response.ok);
+        res.sendStatus(200);
     }
     else
         res.send({ error: "error" });
 }));
+/**
+ * Gets an activity
+ * @param {AP.ActivityType} activityType - type of activity
+ * @param activityId - id of the activity to get
+ */
 router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let activity;
     switch (req.params.activityType) {
@@ -51,6 +57,11 @@ router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0,
     else
         res.send("activity not found");
 }));
+/**
+ * Creates, saves and sends a follow activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
 router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const localDomain = req.app.get("localDomain");
     const webfingerTarget = yield (0, utils_1.getWebfinger)(req.params.target);
@@ -66,7 +77,7 @@ router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0,
     const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
     if (response.ok) {
         (0, utils_1.save)("following", JSON.parse(JSON.stringify(follow)));
-        res.send(response.ok);
+        res.sendStatus(200);
     }
     else
         res.send({ error: "error" });

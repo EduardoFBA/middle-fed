@@ -43,7 +43,13 @@ router.get("/:username", async (req: Request, res: Response) => {
 });
 
 router.get("/:username/followers", async (req: Request, res: Response) => {
-  res.send(await list("followers"));
+  res.send(
+    await search(
+      "followers",
+      "object",
+      `https://middle-fed.onrender.com/u/${req.params.username}`
+    )
+  );
 });
 
 router.get("/:username/inbox", async (req: Request, res: Response) => {
@@ -77,8 +83,8 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       (<URL>followMessage.actor).toString() + ".json"
     );
 
-    console.log("localuserinfo", accept.actor.toString());
     const localUserInfo: any = await getActorInfo(accept.actor.toString());
+    console.log("LOCAL USER INFO", localUserInfo);
 
     console.log("send signed request", userInfo);
     const response = await sendSignedRequest(
