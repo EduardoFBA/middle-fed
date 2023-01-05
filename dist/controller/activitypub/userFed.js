@@ -45,6 +45,10 @@ function buffer(readable) {
         return Buffer.concat(chunks);
     });
 }
+/**
+ * Gets user's page or info as JSON
+ * @param username
+ */
 router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const isJson = req.params.username.endsWith(".json");
     const username = isJson
@@ -65,43 +69,58 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
     }
 }));
+/**
+ * Gets user's followers list
+ * @param username
+ */
 router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(yield (0, utils_1.search)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
+/**
+ * Gets user's inbox
+ * @param username
+ */
 router.get("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(yield (0, utils_1.list)("inbox"));
 }));
+/**
+ * Posts on the user's inbox
+ * @param username
+ * @requires activity - body should have an activity to be posted
+ */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
     const message = JSON.parse(rawBody);
-    if (message.type == activitypub_core_types_1.AP.ActivityTypes.FOLLOW) {
-        const followMessage = message;
-        if (followMessage.id == null)
-            return;
-        console.log("followMessage", followMessage);
-        yield (0, utils_1.save)("followers", followMessage);
-        const localDomain = req.app.get("localDomain");
-        const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, localDomain, followMessage);
-        console.log("accept", accept);
-        yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
-        const userInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
-        const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
-        console.log("LOCAL USER INFO", localUserInfo);
-        console.log("send signed request", userInfo);
-        const response = yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
-        console.log("response", response);
+    switch (message.type) {
+        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+            const followMessage = message;
+            if (followMessage.id == null)
+                return;
+            console.log("followMessage", followMessage);
+            yield (0, utils_1.save)("followers", followMessage);
+            const localDomain = req.app.get("localDomain");
+            const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, localDomain, followMessage);
+            console.log("accept", accept);
+            yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
+            const userInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
+            const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
+            console.log("LOCAL USER INFO", localUserInfo);
+            console.log("send signed request", userInfo);
+            const response = yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
+            console.log("response", response);
+            break;
+        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
+            const undoActivity = message;
+            if (undoActivity == null || undoActivity.id == null)
+                return;
+            if (undoActivity.object == null)
+                return;
+            console.log("undoActivity", undoActivity);
+            yield (0, utils_1.removeActivity)(undoActivity);
+            res.end("inbox finish");
+            break;
     }
-    // if (message.type == "Undo") {
-    //   // Undo a follow.
-    //   const undoObject: AP.Undo = <AP.Undo>message;
-    //   if (undoObject == null || undoObject.id == null) return;
-    //   if (undoObject.object == null) return;
-    //   if ("user" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
-    //   const docId = undoObject.user.toString().replace(/\//g, "_");
-    //   const res = await db.collection('followers').doc(docId).delete();
-    //   console.log("Deleted", res)
-    res.end("inbox finish");
 }));
 router.get("/:username/outbox", (req, res) => {
     res.send({ outbox: req.params.username });

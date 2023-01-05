@@ -56,6 +56,19 @@ export async function remove(
   return docs;
 }
 
+export async function removeActivity(undoActivity: AP.Undo) {
+  const targetActivity = <AP.Activity>undoActivity.object;
+  switch (targetActivity.type) {
+    case AP.ActivityTypes.FOLLOW:
+      await remove("followers", "id", targetActivity.id.toString());
+      break;
+    default:
+      return "ActivityType not supported or doesn't exist";
+  }
+
+  return "";
+}
+
 export async function getActorId(userId: string): Promise<AP.Actor> {
   const promise = await fetch(userId);
   return await promise.json();

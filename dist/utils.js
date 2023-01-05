@@ -35,7 +35,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.remove = exports.search = exports.save = exports.list = void 0;
+exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.removeActivity = exports.remove = exports.search = exports.save = exports.list = void 0;
+const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto = __importStar(require("crypto"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
@@ -84,6 +85,20 @@ function remove(collection, field, value) {
     });
 }
 exports.remove = remove;
+function removeActivity(undoActivity) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const targetActivity = undoActivity.object;
+        switch (targetActivity.type) {
+            case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+                yield remove("followers", "id", targetActivity.id.toString());
+                break;
+            default:
+                return "ActivityType not supported or doesn't exist";
+        }
+        return "";
+    });
+}
+exports.removeActivity = removeActivity;
 function getActorId(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const promise = yield (0, node_fetch_1.default)(userId);
