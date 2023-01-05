@@ -1,6 +1,36 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createUser = void 0;
+exports.createWebfinger = exports.createUser = exports.createFollowActivity = exports.createDeleteActivity = exports.createAcceptActivity = void 0;
+const activitypub_core_types_1 = require("activitypub-core-types");
+const crypto_1 = require("crypto");
+function createActivity(username, domain, activityType) {
+    const activity = {};
+    activity["@context"] = "https://www.w3.org/ns/activitystreams";
+    activity.id = new URL(`https://${domain}/activity/${activityType}/${(0, crypto_1.randomUUID)()}`);
+    activity.actor = new URL(`https://${domain}/u/${username}`);
+    return activity;
+}
+function createAcceptActivity(username, domain, activity) {
+    const accept = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.ACCEPT));
+    accept.type = activitypub_core_types_1.AP.ActivityTypes.ACCEPT;
+    accept.object = activity;
+    return accept;
+}
+exports.createAcceptActivity = createAcceptActivity;
+function createDeleteActivity(username, domain, activity) {
+    const del = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.DELETE));
+    del.type = activitypub_core_types_1.AP.ActivityTypes.DELETE;
+    del.object = activity;
+    return del;
+}
+exports.createDeleteActivity = createDeleteActivity;
+function createFollowActivity(username, domain, targetId) {
+    const follow = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.FOLLOW));
+    follow.type = activitypub_core_types_1.AP.ActivityTypes.FOLLOW;
+    follow.object = targetId;
+    return follow;
+}
+exports.createFollowActivity = createFollowActivity;
 function createUser(name, domain, pubkey, prikey) {
     return {
         "@context": [

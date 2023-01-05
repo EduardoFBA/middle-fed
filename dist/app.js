@@ -46,7 +46,7 @@ exports.app.set("db", db);
 exports.app.set("localDomain", DOMAIN);
 exports.app.use(express_1.default.json());
 exports.app.use(body_parser_1.default.urlencoded({ extended: true }));
-exports.app.use("/api/", cors(), routes_1.apiRoutes);
+exports.app.use("/api", cors(), routes_1.apiRoutes);
 exports.app.use("/", cors(), routes_1.fedRoutes);
 exports.app.use("/.well-known", cors(), webfinger_1.wellKnownRouter);
 exports.app.listen(PORT, () => {

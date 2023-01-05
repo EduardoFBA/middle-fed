@@ -1,4 +1,69 @@
-export function createUser(name, domain, pubkey, prikey) {
+import { AP } from "activitypub-core-types";
+import { randomUUID } from "crypto";
+
+function createActivity(
+  username: string,
+  domain: string,
+  activityType: string
+) {
+  const activity = <AP.Activity>{};
+  activity["@context"] = "https://www.w3.org/ns/activitystreams";
+  activity.id = new URL(
+    `https://${domain}/activity/${activityType}/${randomUUID()}`
+  );
+  activity.actor = new URL(`https://${domain}/u/${username}`);
+
+  return activity;
+}
+
+export function createAcceptActivity(
+  username: string,
+  domain: string,
+  activity: any
+) {
+  const accept = <AP.Accept>(
+    createActivity(username, domain, AP.ActivityTypes.ACCEPT)
+  );
+  accept.type = AP.ActivityTypes.ACCEPT;
+  accept.object = activity;
+
+  return accept;
+}
+
+export function createDeleteActivity(
+  username: string,
+  domain: string,
+  activity: any
+) {
+  const del = <AP.Delete>(
+    createActivity(username, domain, AP.ActivityTypes.DELETE)
+  );
+  del.type = AP.ActivityTypes.DELETE;
+  del.object = activity;
+
+  return del;
+}
+
+export function createFollowActivity(
+  username: string,
+  domain: string,
+  targetId: URL
+) {
+  const follow = <AP.Follow>(
+    createActivity(username, domain, AP.ActivityTypes.FOLLOW)
+  );
+  follow.type = AP.ActivityTypes.FOLLOW;
+  follow.object = targetId;
+
+  return follow;
+}
+
+export function createUser(
+  name: string,
+  domain: string,
+  pubkey: string,
+  prikey: string
+) {
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
@@ -22,7 +87,7 @@ export function createUser(name, domain, pubkey, prikey) {
   };
 }
 
-export function createWebfinger(name, domain) {
+export function createWebfinger(name: string, domain: string) {
   return {
     subject: `acct:${name}@${domain}`,
 

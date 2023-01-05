@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getUserInfo = exports.search = exports.save = exports.list = void 0;
+exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.search = exports.save = exports.list = void 0;
 const firebase_admin_1 = require("firebase-admin");
 const crypto = __importStar(require("crypto"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
@@ -70,28 +70,25 @@ function search(collection, field, value) {
     });
 }
 exports.search = search;
-function getUserInfo(userId) {
+function getActorId(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const promise = yield (0, node_fetch_1.default)(userId);
         return yield promise.json();
     });
 }
-exports.getUserInfo = getUserInfo;
-function getWebfinger(resource, localDomain) {
+exports.getActorId = getActorId;
+function getActorInfo(userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const promise = yield (0, node_fetch_1.default)(userId);
+        return yield promise.json();
+    });
+}
+exports.getActorInfo = getActorInfo;
+function getWebfinger(resource) {
     return __awaiter(this, void 0, void 0, function* () {
         const [username, domain] = extractHandles(resource);
-        if (domain === localDomain) {
-            const response = yield search("webfinger", "subject", `acct:${username}@${domain}`);
-            if (response.length) {
-                return response[0];
-            }
-            else
-                throw "No account found";
-        }
-        else {
-            const promise = yield (0, node_fetch_1.default)(`https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`);
-            return yield promise.json();
-        }
+        const promise = yield (0, node_fetch_1.default)(`https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`);
+        return yield promise.json();
     });
 }
 exports.getWebfinger = getWebfinger;
@@ -115,7 +112,6 @@ function sendSignedRequest(endpoint, method, object, publicKeyId, privateKey) {
         };
         // Generate the signature header
         const signature = sign(endpoint, method, requestHeaders, publicKeyId, privateKey);
-        console.log("fetching", endpoint);
         return yield (0, node_fetch_1.default)(endpoint, {
             method,
             body: activity,

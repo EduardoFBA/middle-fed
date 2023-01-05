@@ -39,28 +39,39 @@ export async function search(
   return docs;
 }
 
-export async function getUserInfo(userId: string): Promise<any> {
+export async function remove(
+  collection: string,
+  field: string,
+  value: string
+): Promise<any[]> {
+  const collectionRef = db.collection(collection);
+  collectionRef.doc("").delete();
+  const snapshot = await collectionRef.where(field, "==", value).get();
+  33493158;
+  const docs = [];
+  snapshot.forEach((doc) => {
+    docs.push(doc.data());
+  });
+
+  return docs;
+}
+
+export async function getActorId(userId: string): Promise<AP.Actor> {
   const promise = await fetch(userId);
   return await promise.json();
 }
 
-export async function getWebfinger(resource: string, localDomain: string) {
+export async function getActorInfo(userId: string): Promise<AP.Actor> {
+  const promise = await fetch(userId);
+  return await promise.json();
+}
+
+export async function getWebfinger(resource: string) {
   const [username, domain] = extractHandles(resource);
-  if (domain === localDomain) {
-    const response: string[] = await search(
-      "webfinger",
-      "subject",
-      `acct:${username}@${domain}`
-    );
-    if (response.length) {
-      return response[0];
-    } else throw "No account found";
-  } else {
-    const promise = await fetch(
-      `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`
-    );
-    return await promise.json();
-  }
+  const promise = await fetch(
+    `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`
+  );
+  return await promise.json();
 }
 
 export function extractHandles(resource: string): string[] {
@@ -97,7 +108,6 @@ export async function sendSignedRequest(
     privateKey
   );
 
-  console.log("fetching", endpoint);
   return await fetch(endpoint, {
     method,
     body: activity,

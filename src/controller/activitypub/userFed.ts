@@ -3,14 +3,17 @@ import { randomUUID } from "crypto";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
 import {
-  getUserInfo,
+  getActorInfo,
   list,
   save,
   search,
   sendSignedRequest,
 } from "../../utils";
+import { createAcceptActivity } from "../../utils-json";
 
 export const userFedRouter = Router();
+const router = Router();
+userFedRouter.use("/u", router);
 
 async function buffer(readable: Readable) {
   const chunks = [];
@@ -20,7 +23,7 @@ async function buffer(readable: Readable) {
   return Buffer.concat(chunks);
 }
 
-userFedRouter.get("/u/:username", async (req: Request, res: Response) => {
+router.get("/:username", async (req: Request, res: Response) => {
   const isJson = req.params.username.endsWith(".json");
   const username = isJson
     ? req.params.username.slice(0, -5)
@@ -39,85 +42,70 @@ userFedRouter.get("/u/:username", async (req: Request, res: Response) => {
   }
 });
 
-userFedRouter.get("/u/:username.json", async (req: Request, res: Response) => {
-  const result = await search(
-    "actor",
-    "preferredUsername",
-    req.params.username
-  );
-  if (result.length) res.send(result[0]);
-  else res.send({ error: "no account found json" });
+router.get("/:username/followers", async (req: Request, res: Response) => {
+  res.send(await list("followers"));
 });
 
-userFedRouter.get("/u/:username/followers", (req: Request, res: Response) => {
-  res.send({ dvklsn: req.params.username });
-});
-
-userFedRouter.get("/u/:username/inbox", async (req: Request, res: Response) => {
+router.get("/:username/inbox", async (req: Request, res: Response) => {
   res.send(await list("inbox"));
 });
 
-userFedRouter.post(
-  "/u/:username/inbox",
-  async (req: Request, res: Response) => {
-    console.log("post inbox");
-    const buf = await buffer(req);
-    const rawBody = buf.toString("utf8");
-    const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+router.post("/:username/inbox", async (req: Request, res: Response) => {
+  const buf = await buffer(req);
+  const rawBody = buf.toString("utf8");
+  const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
 
-    if (message.type == "Follow") {
-      const followMessage: AP.Follow = <AP.Follow>message;
-      if (followMessage.id == null) return;
+  if (message.type == AP.ActivityTypes.FOLLOW) {
+    const followMessage: AP.Follow = <AP.Follow>message;
+    if (followMessage.id == null) return;
 
-      console.log("followMessage", followMessage);
-      await save("followers", followMessage);
+    console.log("followMessage", followMessage);
+    await save("followers", followMessage);
 
-      const localDomain = req.app.get("localDomain");
+    const localDomain = req.app.get("localDomain");
 
-      const accept = <AP.Accept>{};
-      accept["@context"] = "https://www.w3.org/ns/activitystreams";
-      accept.type = AP.ActivityTypes.ACCEPT;
-      accept.id = new URL(`https://${localDomain}/${randomUUID()}`);
-      accept.actor = new URL(`https://${localDomain}/u/${req.params.username}`);
-      accept.object = followMessage;
+    const accept = createAcceptActivity(
+      req.params.username,
+      localDomain,
+      followMessage
+    );
 
-      console.log("accept", accept);
-      await save("accept", JSON.parse(JSON.stringify(accept)));
+    console.log("accept", accept);
+    await save("accept", JSON.parse(JSON.stringify(accept)));
 
-      const userInfo: any = await getUserInfo(
-        (<URL>followMessage.actor).toString() + ".json"
-      );
+    const userInfo = await getActorInfo(
+      (<URL>followMessage.actor).toString() + ".json"
+    );
 
-      console.log("localuserinfo", accept.actor.toString());
-      const localUserInfo: any = await getUserInfo(accept.actor.toString());
+    console.log("localuserinfo", accept.actor.toString());
+    const localUserInfo: any = await getActorInfo(accept.actor.toString());
 
-      console.log("send signed request", userInfo);
-      const response = await sendSignedRequest(
-        <URL>userInfo.inbox,
-        "POST",
-        accept,
-        localUserInfo.publicKey.id,
-        localUserInfo.privateKey
-      );
-      console.log("response", response);
-    }
-
-    // if (message.type == "Undo") {
-    //   // Undo a follow.
-    //   const undoObject: AP.Undo = <AP.Undo>message;
-    //   if (undoObject == null || undoObject.id == null) return;
-    //   if (undoObject.object == null) return;
-    //   if ("user" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
-
-    //   const docId = undoObject.user.toString().replace(/\//g, "_");
-    //   const res = await db.collection('followers').doc(docId).delete();
-
-    //   console.log("Deleted", res)
-
-    res.end("inbox finish");
+    console.log("send signed request", userInfo);
+    const response = await sendSignedRequest(
+      <URL>userInfo.inbox,
+      "POST",
+      accept,
+      localUserInfo.publicKey.id,
+      localUserInfo.privateKey
+    );
+    console.log("response", response);
   }
-);
 
-userFedRouter.get("/u/:username/outbox", (req: Request, res: Response) => {
+  // if (message.type == "Undo") {
+  //   // Undo a follow.
+  //   const undoObject: AP.Undo = <AP.Undo>message;
+  //   if (undoObject == null || undoObject.id == null) return;
+  //   if (undoObject.object == null) return;
+  //   if ("user" in undoObject.object == false && (<CoreObject>undoObject.object).type != "Follow") return;
+
+  //   const docId = undoObject.user.toString().replace(/\//g, "_");
+  //   const res = await db.collection('followers').doc(docId).delete();
+
+  //   console.log("Deleted", res)
+
+  res.end("inbox finish");
+});
+
+router.get("/:username/outbox", (req: Request, res: Response) => {
   res.send({ outbox: req.params.username });
 });

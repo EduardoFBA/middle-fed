@@ -11,8 +11,22 @@ user html
     xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
             div.innerHTML = this.responseText;
+            
+            const button = document.createElement("button");
+            button.innerHTML = "button";
+            div.appendChild(button);
+            button.onclick =  function() {
+                const followRequest = new XMLHttpRequest();
+                followRequest.onreadystatechange = function() {
+                    button.innerHTML = "followed";
+                }
+                
+                xhttp.open("POST", `http://localhost:3000/activity/${username}/follow/@zofiaromaszewski@mstdn.social`, true);
+                xhttp.send();
+            }
         }
     };
     xhttp.open("GET", `http://localhost:3000/u/${username}.json`, true);
     xhttp.send();
+
 </script>

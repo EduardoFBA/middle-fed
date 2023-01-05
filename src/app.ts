@@ -23,7 +23,7 @@ app.set("db", db);
 app.set("localDomain", DOMAIN);
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/api/", cors(), apiRoutes);
+app.use("/api", cors(), apiRoutes);
 app.use("/", cors(), fedRoutes);
 app.use("/.well-known", cors(), wellKnownRouter);
 app.listen(PORT, () => {
