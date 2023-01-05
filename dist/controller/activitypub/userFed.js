@@ -86,7 +86,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
         console.log("accept", accept);
         yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
         const userInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
-        const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString());
+        const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
         console.log("LOCAL USER INFO", localUserInfo);
         console.log("send signed request", userInfo);
         const response = yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);

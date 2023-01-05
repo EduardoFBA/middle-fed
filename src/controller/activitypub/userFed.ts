@@ -83,7 +83,9 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       (<URL>followMessage.actor).toString() + ".json"
     );
 
-    const localUserInfo: any = await getActorInfo(accept.actor.toString());
+    const localUserInfo: any = await getActorInfo(
+      accept.actor.toString() + ".json"
+    );
     console.log("LOCAL USER INFO", localUserInfo);
 
     console.log("send signed request", userInfo);
