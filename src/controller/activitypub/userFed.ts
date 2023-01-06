@@ -85,9 +85,9 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       const followMessage: AP.Follow = <AP.Follow>message;
       if (followMessage.id == null) return;
 
+      console.log("followMessage", followMessage);
       if (followRequestAlreadyExists(followMessage)) return;
 
-      console.log("followMessage", followMessage);
       await save("followers", followMessage);
 
       const localDomain = req.app.get("localDomain");
@@ -146,5 +146,6 @@ async function followRequestAlreadyExists(
   q2.value = followMessage.object;
 
   const result = await search("followers", [q1, q2]);
+  console.log("result", result, result.length, !!result.length);
   return !!result.length;
 }

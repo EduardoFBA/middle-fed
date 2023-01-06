@@ -97,9 +97,9 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             const followMessage = message;
             if (followMessage.id == null)
                 return;
+            console.log("followMessage", followMessage);
             if (followRequestAlreadyExists(followMessage))
                 return;
-            console.log("followMessage", followMessage);
             yield (0, utils_1.save)("followers", followMessage);
             const localDomain = req.app.get("localDomain");
             const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, localDomain, followMessage);
@@ -133,6 +133,7 @@ function followRequestAlreadyExists(followMessage) {
         q2.fieldPath = "object";
         q2.value = followMessage.object;
         const result = yield (0, utils_1.search)("followers", [q1, q2]);
+        console.log("result", result, result.length, !!result.length);
         return !!result.length;
     });
 }
