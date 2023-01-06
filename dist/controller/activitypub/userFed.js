@@ -98,8 +98,11 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             if (followMessage.id == null)
                 return;
             console.log("followMessage", followMessage);
-            if (followRequestAlreadyExists(followMessage))
+            if (followRequestAlreadyExists(followMessage)) {
+                console.log("follow activity already exist");
+                res.end("follow activity already exist");
                 return;
+            }
             yield (0, utils_1.save)("followers", followMessage);
             const localDomain = req.app.get("localDomain");
             const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, localDomain, followMessage);

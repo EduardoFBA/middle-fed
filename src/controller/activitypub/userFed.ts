@@ -86,7 +86,11 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       if (followMessage.id == null) return;
 
       console.log("followMessage", followMessage);
-      if (followRequestAlreadyExists(followMessage)) return;
+      if (followRequestAlreadyExists(followMessage)) {
+        console.log("follow activity already exist");
+        res.end("follow activity already exist");
+        return;
+      }
 
       await save("followers", followMessage);
 
