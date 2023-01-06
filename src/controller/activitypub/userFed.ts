@@ -4,9 +4,11 @@ import { Readable } from "stream";
 import {
   getActorInfo,
   list,
+  Query,
   removeActivity,
   save,
   search,
+  searchByField,
   sendSignedRequest,
 } from "../../utils";
 import { createAcceptActivity } from "../../utils-json";
@@ -33,7 +35,7 @@ router.get("/:username", async (req: Request, res: Response) => {
     ? req.params.username.slice(0, -5)
     : req.params.username;
 
-  const result = await search("actor", "preferredUsername", username);
+  const result = await searchByField("actor", "preferredUsername", username);
   if (!result.length) res.send({ error: "no account found" });
   else {
     if (isJson) {
@@ -52,7 +54,7 @@ router.get("/:username", async (req: Request, res: Response) => {
  */
 router.get("/:username/followers", async (req: Request, res: Response) => {
   res.send(
-    await search(
+    await searchByField(
       "followers",
       "object",
       `https://middle-fed.onrender.com/u/${req.params.username}`
@@ -82,6 +84,8 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
     case AP.ActivityTypes.FOLLOW:
       const followMessage: AP.Follow = <AP.Follow>message;
       if (followMessage.id == null) return;
+
+      if (followRequestAlreadyExists(followMessage)) return;
 
       console.log("followMessage", followMessage);
       await save("followers", followMessage);
@@ -130,6 +134,17 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:username/outbox", (req: Request, res: Response) => {
-  res.send({ outbox: req.params.username });
-});
+async function followRequestAlreadyExists(
+  followMessage: AP.Follow
+): Promise<boolean> {
+  const q1 = new Query();
+  q1.fieldPath = "actor";
+  q1.value = followMessage.actor;
+
+  const q2 = new Query();
+  q2.fieldPath = "object";
+  q2.value = followMessage.object;
+
+  const result = await search("followers", [q1, q2]);
+  return !!result.length;
+}

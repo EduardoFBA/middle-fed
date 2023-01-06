@@ -35,12 +35,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.removeActivity = exports.remove = exports.search = exports.save = exports.list = void 0;
+exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto = __importStar(require("crypto"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const db = (0, firebase_admin_1.firestore)();
+class Query {
+    constructor() {
+        this.fieldPath = "id";
+        this.opStr = "==";
+    }
+}
+exports.Query = Query;
 function list(collection) {
     return __awaiter(this, void 0, void 0, function* () {
         const collectionRef = db.collection(collection);
@@ -59,10 +66,29 @@ function save(collection, data) {
     });
 }
 exports.save = save;
-function search(collection, field, value) {
+function searchByField(collection, field, value) {
     return __awaiter(this, void 0, void 0, function* () {
         const collectionRef = db.collection(collection);
         const snapshot = yield collectionRef.where(field, "==", value).get();
+        const docs = [];
+        snapshot.forEach((doc) => {
+            docs.push(doc.data());
+        });
+        return docs;
+    });
+}
+exports.searchByField = searchByField;
+function search(collection, queries) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const colRef = db.collection(collection);
+        let query;
+        for (let i = 0; i < queries.length; i++) {
+            query =
+                i == 0
+                    ? colRef.where(queries[i].fieldPath, queries[i].opStr, queries[i].value)
+                    : query.where(queries[i].fieldPath, queries[i].opStr, queries[i].value);
+        }
+        const snapshot = yield query.get();
         const docs = [];
         snapshot.forEach((doc) => {
             docs.push(doc.data());
@@ -71,18 +97,16 @@ function search(collection, field, value) {
     });
 }
 exports.search = search;
-function remove(collection, field, value) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const collectionRef = db.collection(collection);
-        collectionRef.doc("").delete();
-        const snapshot = yield collectionRef.where(field, "==", value).get();
-        33493158;
-        const docs = [];
-        snapshot.forEach((doc) => {
-            docs.push(doc.data());
-        });
-        return docs;
-    });
+function remove(collection, queries) {
+    const colRef = db.collection(collection);
+    let query;
+    for (let i = 0; i < queries.length; i++) {
+        query =
+            i == 0
+                ? colRef.where(queries[i].fieldPath, queries[i].opStr, queries[i].value)
+                : query.where(queries[i].fieldPath, queries[i].opStr, queries[i].value);
+    }
+    query.onSnapshot((snapshot) => snapshot.forEach((result) => result.ref.delete()));
 }
 exports.remove = remove;
 function removeActivity(undoActivity) {
@@ -90,7 +114,11 @@ function removeActivity(undoActivity) {
         const targetActivity = undoActivity.object;
         switch (targetActivity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-                yield remove("followers", "id", targetActivity.id.toString());
+                const query = new Query();
+                query.fieldPath = "id";
+                query.opStr = "==";
+                query.value = targetActivity.id.toString();
+                remove("followers", [query]);
                 break;
             default:
                 return "ActivityType not supported or doesn't exist";

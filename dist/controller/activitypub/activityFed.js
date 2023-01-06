@@ -22,7 +22,7 @@ exports.activityFedRouter.use("/activity", router);
  * @param activityId - id of the activity to delete
  */
 router.delete("/delete/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    (0, utils_1.search)("", "id", req.params.activityId);
+    (0, utils_1.searchByField)("", "id", req.params.activityId);
     const localDomain = req.app.get("localDomain");
     const webfingerTarget = yield (0, utils_1.getWebfinger)(req.params.target);
     const selfTarget = webfingerTarget.links.filter((link) => {
@@ -50,7 +50,7 @@ router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0,
     let activity;
     switch (req.params.activityType) {
         case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-            activity = (yield (0, utils_1.search)("following", "id", req.params.activityId));
+            activity = (yield (0, utils_1.searchByField)("following", "id", req.params.activityId));
     }
     if (activity.length)
         res.send(activity[0]);

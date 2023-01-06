@@ -3,8 +3,10 @@ import { Request, Response, Router } from "express";
 import {
   getActorInfo,
   getWebfinger,
+  Query,
   save,
   search,
+  searchByField,
   sendSignedRequest,
 } from "../../utils";
 import { createFollowActivity } from "../../utils-json";
@@ -18,7 +20,7 @@ activityFedRouter.use("/activity", router);
  * @param activityId - id of the activity to delete
  */
 router.delete("/delete/:activityId", async (req: Request, res: Response) => {
-  search("", "id", req.params.activityId);
+  searchByField("", "id", req.params.activityId);
   const localDomain = req.app.get("localDomain");
 
   const webfingerTarget = await getWebfinger(req.params.target);
@@ -61,7 +63,7 @@ router.get(
     switch (req.params.activityType) {
       case AP.ActivityTypes.FOLLOW:
         activity = <AP.Follow[]>(
-          await search("following", "id", req.params.activityId)
+          await searchByField("following", "id", req.params.activityId)
         );
     }
 

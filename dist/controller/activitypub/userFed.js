@@ -54,7 +54,7 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
     const username = isJson
         ? req.params.username.slice(0, -5)
         : req.params.username;
-    const result = yield (0, utils_1.search)("actor", "preferredUsername", username);
+    const result = yield (0, utils_1.searchByField)("actor", "preferredUsername", username);
     if (!result.length)
         res.send({ error: "no account found" });
     else {
@@ -74,7 +74,7 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
  * @param username
  */
 router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.search)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
+    res.send(yield (0, utils_1.searchByField)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 /**
  * Gets user's inbox
@@ -96,6 +96,8 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
         case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
             const followMessage = message;
             if (followMessage.id == null)
+                return;
+            if (followRequestAlreadyExists(followMessage))
                 return;
             console.log("followMessage", followMessage);
             yield (0, utils_1.save)("followers", followMessage);
@@ -122,7 +124,16 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             break;
     }
 }));
-router.get("/:username/outbox", (req, res) => {
-    res.send({ outbox: req.params.username });
-});
+function followRequestAlreadyExists(followMessage) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const q1 = new utils_1.Query();
+        q1.fieldPath = "actor";
+        q1.value = followMessage.actor;
+        const q2 = new utils_1.Query();
+        q2.fieldPath = "object";
+        q2.value = followMessage.object;
+        const result = yield (0, utils_1.search)("followers", [q1, q2]);
+        return !!result.length;
+    });
+}
 //# sourceMappingURL=userFed.js.map

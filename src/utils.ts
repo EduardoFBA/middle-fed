@@ -4,6 +4,13 @@ import * as crypto from "crypto";
 import fetch from "node-fetch";
 
 const db = firestore();
+
+export class Query {
+  fieldPath: string | firestore.FieldPath = "id";
+  opStr: firestore.WhereFilterOp = "==";
+  value: any;
+}
+
 export async function list(collection: string): Promise<any[]> {
   const collectionRef = db.collection(collection);
   const snapshot = await collectionRef.get();
@@ -23,10 +30,10 @@ export async function save(
   return await db.collection(collection).doc().set(data);
 }
 
-export async function search(
+export async function searchByField(
   collection: string,
   field: string,
-  value: string
+  value: any
 ): Promise<any[]> {
   const collectionRef = db.collection(collection);
   const snapshot = await collectionRef.where(field, "==", value).get();
@@ -39,28 +46,51 @@ export async function search(
   return docs;
 }
 
-export async function remove(
+export async function search(
   collection: string,
-  field: string,
-  value: string
+  queries: Query[]
 ): Promise<any[]> {
-  const collectionRef = db.collection(collection);
-  collectionRef.doc("").delete();
-  const snapshot = await collectionRef.where(field, "==", value).get();
-  33493158;
+  const colRef = db.collection(collection);
+  let query: FirebaseFirestore.Query;
+  for (let i = 0; i < queries.length; i++) {
+    query =
+      i == 0
+        ? colRef.where(queries[i].fieldPath, queries[i].opStr, queries[i].value)
+        : query.where(queries[i].fieldPath, queries[i].opStr, queries[i].value);
+  }
+  const snapshot = await query.get();
+
   const docs = [];
   snapshot.forEach((doc) => {
     docs.push(doc.data());
   });
 
   return docs;
+}
+
+export function remove(collection: string, queries: Query[]): void {
+  const colRef = db.collection(collection);
+  let query: FirebaseFirestore.Query;
+  for (let i = 0; i < queries.length; i++) {
+    query =
+      i == 0
+        ? colRef.where(queries[i].fieldPath, queries[i].opStr, queries[i].value)
+        : query.where(queries[i].fieldPath, queries[i].opStr, queries[i].value);
+  }
+  query.onSnapshot((snapshot) =>
+    snapshot.forEach((result) => result.ref.delete())
+  );
 }
 
 export async function removeActivity(undoActivity: AP.Undo) {
   const targetActivity = <AP.Activity>undoActivity.object;
   switch (targetActivity.type) {
     case AP.ActivityTypes.FOLLOW:
-      await remove("followers", "id", targetActivity.id.toString());
+      const query = new Query();
+      query.fieldPath = "id";
+      query.opStr = "==";
+      query.value = targetActivity.id.toString();
+      remove("followers", [query]);
       break;
     default:
       return "ActivityType not supported or doesn't exist";
