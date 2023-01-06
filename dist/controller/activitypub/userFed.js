@@ -98,8 +98,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             if (followMessage.id == null)
                 return;
             console.log("followMessage", followMessage);
-            if (followRequestAlreadyExists(followMessage)) {
-                console.log("follow activity already exist");
+            if (yield followRequestAlreadyExists(followMessage)) {
                 res.end("follow activity already exist");
                 return;
             }
@@ -125,6 +124,8 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             yield (0, utils_1.removeActivity)(undoActivity);
             res.end("inbox finish");
             break;
+        default:
+            res.end("ActivityType not supported or doesn't exist");
     }
 }));
 function followRequestAlreadyExists(followMessage) {
@@ -136,7 +137,6 @@ function followRequestAlreadyExists(followMessage) {
         q2.fieldPath = "object";
         q2.value = followMessage.object;
         const result = yield (0, utils_1.search)("followers", [q1, q2]);
-        console.log("result", result, result.length, !!result.length);
         return !!result.length;
     });
 }
