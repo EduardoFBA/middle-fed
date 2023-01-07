@@ -99,6 +99,27 @@ export async function removeActivity(undoActivity: AP.Undo) {
   return "";
 }
 
+export async function activityAlreadyExists(
+  activity: AP.Activity
+): Promise<boolean> {
+  switch (activity.type) {
+    case AP.ActivityTypes.FOLLOW:
+      const follow = <AP.Follow>activity;
+      const q1 = new Query();
+      q1.fieldPath = "actor";
+      q1.value = follow.actor;
+
+      const q2 = new Query();
+      q2.fieldPath = "object";
+      q2.value = follow.object;
+
+      const result = await search(AP.ActivityTypes.FOLLOW, [q1, q2]);
+      return !!result.length;
+    default:
+      return new Promise(() => false);
+  }
+}
+
 export async function getActorId(userId: string): Promise<AP.Actor> {
   const promise = await fetch(userId);
   return await promise.json();

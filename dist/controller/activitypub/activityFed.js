@@ -18,28 +18,39 @@ exports.activityFedRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.activityFedRouter.use("/activity", router);
 /**
- * Deletes an activity
- * @param activityId - id of the activity to delete
+ * Undoes an activity
+ * @param username - name of current user
+ * @param activityId - id of the activity to undo
+ * @param activityType - type of activity
  */
-router.delete("/delete/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    (0, utils_1.searchByField)("", "id", req.params.activityId);
+router.delete("/:username/undo/:activityId/:activityType", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const localDomain = req.app.get("localDomain");
-    const webfingerTarget = yield (0, utils_1.getWebfinger)(req.params.target);
-    const selfTarget = webfingerTarget.links.filter((link) => {
-        return link.rel == "self";
-    });
-    const targetId = selfTarget[0].href;
-    const targetInfo = yield (0, utils_1.getActorInfo)(targetId + ".json");
-    const username = req.params.username;
-    const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
-    const follow = (0, utils_json_1.createFollowActivity)(username, localDomain, new URL(targetId));
-    const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
-    if (response.ok) {
-        (0, utils_1.save)("following", JSON.parse(JSON.stringify(follow)));
-        res.sendStatus(200);
+    const result = (yield (0, utils_1.searchByField)("following", "id", `https://${localDomain}/activity/Follow/${req.params.activityId}`));
+    if (!result.length) {
+        res.send("nothin");
+        return;
     }
-    else
-        res.send({ error: "error" });
+    switch (result[0].type) {
+        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+            const follow = result[0];
+            const objectActor = follow.object;
+            const targetInfo = yield (0, utils_1.getActorInfo)(objectActor + ".json");
+            const username = req.params.username;
+            const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
+            const undo = (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
+            const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, actorInfo.publicKey.id, actorInfo.privateKey);
+            console.log("response", response);
+            if (response.ok) {
+                const query = new utils_1.Query();
+                query.value = follow.id;
+                (0, utils_1.remove)("following", [query]);
+                res.send("finished");
+            }
+            break;
+        default:
+            res.send("default");
+            break;
+    }
 }));
 /**
  * Gets an activity
@@ -76,7 +87,7 @@ router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0,
     console.log("follow", follow);
     const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
     if (response.ok) {
-        (0, utils_1.save)("following", JSON.parse(JSON.stringify(follow)));
+        (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
         res.sendStatus(200);
     }
     else

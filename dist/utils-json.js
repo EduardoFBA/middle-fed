@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createUser = exports.createFollowActivity = exports.createDeleteActivity = exports.createAcceptActivity = void 0;
+exports.createWebfinger = exports.createUser = exports.createUndoActivity = exports.createFollowActivity = exports.createDeleteActivity = exports.createAcceptActivity = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 function createActivity(username, domain, activityType) {
@@ -31,6 +31,13 @@ function createFollowActivity(username, domain, targetId) {
     return follow;
 }
 exports.createFollowActivity = createFollowActivity;
+function createUndoActivity(username, domain, activity) {
+    const undo = createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.UNDO);
+    undo.type = activitypub_core_types_1.AP.ActivityTypes.UNDO;
+    undo.object = activity;
+    return undo;
+}
+exports.createUndoActivity = createUndoActivity;
 function createUser(name, domain, pubkey, prikey) {
     return {
         "@context": [

@@ -2,12 +2,11 @@ import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
 import {
+  activityAlreadyExists,
   getActorInfo,
   list,
-  Query,
   removeActivity,
   save,
-  search,
   searchByField,
   sendSignedRequest,
 } from "../../utils";
@@ -63,6 +62,20 @@ router.get("/:username/followers", async (req: Request, res: Response) => {
 });
 
 /**
+ * Gets user's following list
+ * @param username
+ */
+router.get("/:username/following", async (req: Request, res: Response) => {
+  res.send(
+    await searchByField(
+      "following",
+      "actor",
+      `https://middle-fed.onrender.com/u/${req.params.username}`
+    )
+  );
+});
+
+/**
  * Gets user's inbox
  * @param username
  */
@@ -78,78 +91,55 @@ router.get("/:username/inbox", async (req: Request, res: Response) => {
 router.post("/:username/inbox", async (req: Request, res: Response) => {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  const message: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
 
-  switch (message.type) {
-    case AP.ActivityTypes.FOLLOW:
-      const followMessage: AP.Follow = <AP.Follow>message;
-      if (followMessage.id == null) return;
+  switch (activity.type) {
+    case AP.ActivityTypes.UNDO:
+      const undoActivity: AP.Undo = <AP.Undo>activity;
+      if (
+        undoActivity == null ||
+        undoActivity.id == null ||
+        undoActivity.object == null
+      )
+        return;
 
-      console.log("followMessage", followMessage);
-      if (await followRequestAlreadyExists(followMessage)) {
+      await removeActivity(undoActivity);
+
+      break;
+
+    default:
+      if (activity.id == null) return;
+
+      if (await activityAlreadyExists(activity)) {
         res.end("follow activity already exist");
         return;
       }
 
-      await save("followers", followMessage);
-
-      const localDomain = req.app.get("localDomain");
+      await save(activity.type.toString(), activity);
 
       const accept = createAcceptActivity(
         req.params.username,
-        localDomain,
-        followMessage
+        req.app.get("localDomain"),
+        activity
       );
 
-      console.log("accept", accept);
       await save("accept", JSON.parse(JSON.stringify(accept)));
 
       const userInfo = await getActorInfo(
-        (<URL>followMessage.actor).toString() + ".json"
+        (<URL>activity.actor).toString() + ".json"
       );
 
       const localUserInfo: any = await getActorInfo(
         accept.actor.toString() + ".json"
       );
-      console.log("LOCAL USER INFO", localUserInfo);
 
-      console.log("send signed request", userInfo);
-      const response = await sendSignedRequest(
+      await sendSignedRequest(
         <URL>userInfo.inbox,
         "POST",
         accept,
         localUserInfo.publicKey.id,
         localUserInfo.privateKey
       );
-      console.log("response", response);
       break;
-
-    case AP.ActivityTypes.UNDO:
-      const undoActivity: AP.Undo = <AP.Undo>message;
-      if (undoActivity == null || undoActivity.id == null) return;
-      if (undoActivity.object == null) return;
-
-      console.log("undoActivity", undoActivity);
-      await removeActivity(undoActivity);
-
-      res.end("inbox finish");
-      break;
-    default:
-      res.end("ActivityType not supported or doesn't exist");
   }
 });
-
-async function followRequestAlreadyExists(
-  followMessage: AP.Follow
-): Promise<boolean> {
-  const q1 = new Query();
-  q1.fieldPath = "actor";
-  q1.value = followMessage.actor;
-
-  const q2 = new Query();
-  q2.fieldPath = "object";
-  q2.value = followMessage.object;
-
-  const result = await search("followers", [q1, q2]);
-  return !!result.length;
-}

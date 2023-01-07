@@ -58,6 +58,18 @@ export function createFollowActivity(
   return follow;
 }
 
+export function createUndoActivity(
+  username: string,
+  domain: string,
+  activity: AP.Activity
+) {
+  const undo = <AP.Undo>createActivity(username, domain, AP.ActivityTypes.UNDO);
+  undo.type = AP.ActivityTypes.UNDO;
+  undo.object = activity;
+
+  return undo;
+}
+
 export function createUser(
   name: string,
   domain: string,

@@ -77,6 +77,13 @@ router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 
     res.send(yield (0, utils_1.searchByField)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 /**
+ * Gets user's following list
+ * @param username
+ */
+router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.send(yield (0, utils_1.searchByField)("following", "actor", `https://middle-fed.onrender.com/u/${req.params.username}`));
+}));
+/**
  * Gets user's inbox
  * @param username
  */
@@ -91,53 +98,30 @@ router.get("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, f
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
-    const message = JSON.parse(rawBody);
-    switch (message.type) {
-        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-            const followMessage = message;
-            if (followMessage.id == null)
+    const activity = JSON.parse(rawBody);
+    switch (activity.type) {
+        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
+            const undoActivity = activity;
+            if (undoActivity == null ||
+                undoActivity.id == null ||
+                undoActivity.object == null)
                 return;
-            console.log("followMessage", followMessage);
-            if (yield followRequestAlreadyExists(followMessage)) {
+            yield (0, utils_1.removeActivity)(undoActivity);
+            break;
+        default:
+            if (activity.id == null)
+                return;
+            if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                 res.end("follow activity already exist");
                 return;
             }
-            yield (0, utils_1.save)("followers", followMessage);
-            const localDomain = req.app.get("localDomain");
-            const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, localDomain, followMessage);
-            console.log("accept", accept);
+            yield (0, utils_1.save)(activity.type.toString(), activity);
+            const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, req.app.get("localDomain"), activity);
             yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
-            const userInfo = yield (0, utils_1.getActorInfo)(followMessage.actor.toString() + ".json");
+            const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString() + ".json");
             const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
-            console.log("LOCAL USER INFO", localUserInfo);
-            console.log("send signed request", userInfo);
-            const response = yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
-            console.log("response", response);
+            yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
             break;
-        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
-            const undoActivity = message;
-            if (undoActivity == null || undoActivity.id == null)
-                return;
-            if (undoActivity.object == null)
-                return;
-            console.log("undoActivity", undoActivity);
-            yield (0, utils_1.removeActivity)(undoActivity);
-            res.end("inbox finish");
-            break;
-        default:
-            res.end("ActivityType not supported or doesn't exist");
     }
 }));
-function followRequestAlreadyExists(followMessage) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const q1 = new utils_1.Query();
-        q1.fieldPath = "actor";
-        q1.value = followMessage.actor;
-        const q2 = new utils_1.Query();
-        q2.fieldPath = "object";
-        q2.value = followMessage.object;
-        const result = yield (0, utils_1.search)("followers", [q1, q2]);
-        return !!result.length;
-    });
-}
 //# sourceMappingURL=userFed.js.map

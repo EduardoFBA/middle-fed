@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
+exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto = __importStar(require("crypto"));
@@ -127,6 +127,25 @@ function removeActivity(undoActivity) {
     });
 }
 exports.removeActivity = removeActivity;
+function activityAlreadyExists(activity) {
+    return __awaiter(this, void 0, void 0, function* () {
+        switch (activity.type) {
+            case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+                const follow = activity;
+                const q1 = new Query();
+                q1.fieldPath = "actor";
+                q1.value = follow.actor;
+                const q2 = new Query();
+                q2.fieldPath = "object";
+                q2.value = follow.object;
+                const result = yield search(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [q1, q2]);
+                return !!result.length;
+            default:
+                return new Promise(() => false);
+        }
+    });
+}
+exports.activityAlreadyExists = activityAlreadyExists;
 function getActorId(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const promise = yield (0, node_fetch_1.default)(userId);
