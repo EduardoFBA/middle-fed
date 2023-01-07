@@ -118,7 +118,7 @@ function removeActivity(undoActivity) {
                 query.fieldPath = "id";
                 query.opStr = "==";
                 query.value = targetActivity.id.toString();
-                remove("followers", [query]);
+                remove(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [query]);
                 break;
             default:
                 return "ActivityType not supported or doesn't exist";

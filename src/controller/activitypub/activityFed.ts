@@ -28,7 +28,7 @@ router.delete(
     const localDomain = req.app.get("localDomain");
     const result = <AP.Activity[]>(
       await searchByField(
-        "following",
+        AP.ActivityTypes.FOLLOW,
         "id",
         `https://${localDomain}/activity/Follow/${req.params.activityId}`
       )
@@ -60,12 +60,10 @@ router.delete(
           (actorInfo as any).privateKey
         );
 
-        console.log("response", response);
-
         if (response.ok) {
           const query = new Query();
           query.value = follow.id;
-          remove("following", [query]);
+          remove(AP.ActivityTypes.FOLLOW, [query]);
           res.send("finished");
         }
         break;
@@ -88,7 +86,11 @@ router.get(
     switch (req.params.activityType) {
       case AP.ActivityTypes.FOLLOW:
         activity = <AP.Follow[]>(
-          await searchByField("following", "id", req.params.activityId)
+          await searchByField(
+            AP.ActivityTypes.FOLLOW,
+            "id",
+            req.params.activityId
+          )
         );
     }
 
@@ -124,7 +126,7 @@ router.post(
       localDomain,
       new URL(targetId)
     );
-    console.log("follow", follow);
+    console.log(AP.ActivityTypes.FOLLOW, follow);
     const response = await sendSignedRequest(
       <URL>targetInfo.inbox,
       "POST",

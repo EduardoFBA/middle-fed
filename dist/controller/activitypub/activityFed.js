@@ -25,7 +25,7 @@ exports.activityFedRouter.use("/activity", router);
  */
 router.delete("/:username/undo/:activityId/:activityType", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const localDomain = req.app.get("localDomain");
-    const result = (yield (0, utils_1.searchByField)("following", "id", `https://${localDomain}/activity/Follow/${req.params.activityId}`));
+    const result = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "id", `https://${localDomain}/activity/Follow/${req.params.activityId}`));
     if (!result.length) {
         res.send("nothin");
         return;
@@ -39,11 +39,10 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
             const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
             const undo = (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
             const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, actorInfo.publicKey.id, actorInfo.privateKey);
-            console.log("response", response);
             if (response.ok) {
                 const query = new utils_1.Query();
                 query.value = follow.id;
-                (0, utils_1.remove)("following", [query]);
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [query]);
                 res.send("finished");
             }
             break;
@@ -61,7 +60,7 @@ router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0,
     let activity;
     switch (req.params.activityType) {
         case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-            activity = (yield (0, utils_1.searchByField)("following", "id", req.params.activityId));
+            activity = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "id", req.params.activityId));
     }
     if (activity.length)
         res.send(activity[0]);
@@ -84,7 +83,7 @@ router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0,
     const username = req.params.username;
     const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
     const follow = (0, utils_json_1.createFollowActivity)(username, localDomain, new URL(targetId));
-    console.log("follow", follow);
+    console.log(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow);
     const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
     if (response.ok) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));

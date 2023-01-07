@@ -90,7 +90,7 @@ export async function removeActivity(undoActivity: AP.Undo) {
       query.fieldPath = "id";
       query.opStr = "==";
       query.value = targetActivity.id.toString();
-      remove("followers", [query]);
+      remove(AP.ActivityTypes.FOLLOW, [query]);
       break;
     default:
       return "ActivityType not supported or doesn't exist";

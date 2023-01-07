@@ -54,7 +54,7 @@ router.get("/:username", async (req: Request, res: Response) => {
 router.get("/:username/followers", async (req: Request, res: Response) => {
   res.send(
     await searchByField(
-      "followers",
+      AP.ActivityTypes.FOLLOW,
       "object",
       `https://middle-fed.onrender.com/u/${req.params.username}`
     )
@@ -68,7 +68,7 @@ router.get("/:username/followers", async (req: Request, res: Response) => {
 router.get("/:username/following", async (req: Request, res: Response) => {
   res.send(
     await searchByField(
-      "following",
+      AP.ActivityTypes.FOLLOW,
       "actor",
       `https://middle-fed.onrender.com/u/${req.params.username}`
     )

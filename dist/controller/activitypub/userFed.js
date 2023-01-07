@@ -74,14 +74,14 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
  * @param username
  */
 router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.searchByField)("followers", "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
+    res.send(yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 /**
  * Gets user's following list
  * @param username
  */
 router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.searchByField)("following", "actor", `https://middle-fed.onrender.com/u/${req.params.username}`));
+    res.send(yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 /**
  * Gets user's inbox
