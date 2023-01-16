@@ -150,9 +150,11 @@ export async function sendSignedRequest(
   endpoint: URL,
   method: string,
   object: AP.Activity,
-  publicKeyId: string,
-  privateKey: string
+  domain: string,
+  username: string
 ): Promise<Response> {
+  const actorInfo = await getActorInfo(`https://${domain}/u/${username}.json`);
+
   const activity = JSON.stringify(object);
   const requestHeaders = {
     host: endpoint.hostname,
@@ -168,8 +170,8 @@ export async function sendSignedRequest(
     endpoint,
     method,
     requestHeaders,
-    publicKeyId,
-    privateKey
+    actorInfo.publicKey.id,
+    (actorInfo as any).privateKey
   );
 
   return await fetch(endpoint, {

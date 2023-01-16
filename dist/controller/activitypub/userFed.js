@@ -116,11 +116,12 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
                 return;
             }
             yield (0, utils_1.save)(activity.type.toString(), activity);
-            const accept = (0, utils_json_1.createAcceptActivity)(req.params.username, req.app.get("localDomain"), activity);
-            yield (0, utils_1.save)("accept", JSON.parse(JSON.stringify(accept)));
+            const localDomain = req.app.get("localDomain");
+            const username = req.params.username;
+            const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
             const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString() + ".json");
             const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
-            yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localUserInfo.publicKey.id, localUserInfo.privateKey);
+            yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username);
             break;
     }
 }));

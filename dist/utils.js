@@ -175,8 +175,9 @@ function extractHandles(resource) {
         : [string.split("@")[0], string.split("@")[1]];
 }
 exports.extractHandles = extractHandles;
-function sendSignedRequest(endpoint, method, object, publicKeyId, privateKey) {
+function sendSignedRequest(endpoint, method, object, domain, username) {
     return __awaiter(this, void 0, void 0, function* () {
+        const actorInfo = yield getActorInfo(`https://${domain}/u/${username}.json`);
         const activity = JSON.stringify(object);
         const requestHeaders = {
             host: endpoint.hostname,
@@ -187,7 +188,7 @@ function sendSignedRequest(endpoint, method, object, publicKeyId, privateKey) {
                 .digest("base64")}`,
         };
         // Generate the signature header
-        const signature = sign(endpoint, method, requestHeaders, publicKeyId, privateKey);
+        const signature = sign(endpoint, method, requestHeaders, actorInfo.publicKey.id, actorInfo.privateKey);
         return yield (0, node_fetch_1.default)(endpoint, {
             method,
             body: activity,

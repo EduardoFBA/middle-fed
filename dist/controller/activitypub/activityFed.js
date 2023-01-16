@@ -36,9 +36,8 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
             const objectActor = follow.object;
             const targetInfo = yield (0, utils_1.getActorInfo)(objectActor + ".json");
             const username = req.params.username;
-            const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
             const undo = (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
-            const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, actorInfo.publicKey.id, actorInfo.privateKey);
+            const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, localDomain, username);
             if (response.ok) {
                 const query = new utils_1.Query();
                 query.value = follow.id;
@@ -57,11 +56,7 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
  * @param activityId - id of the activity to get
  */
 router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let activity;
-    switch (req.params.activityType) {
-        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-            activity = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "id", req.params.activityId));
-    }
+    let activity = (yield (0, utils_1.searchByField)(req.params.activityType, "id", req.params.activityId));
     if (activity.length)
         res.send(activity[0]);
     else
@@ -81,15 +76,74 @@ router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0,
     const targetId = selfTarget[0].href;
     const targetInfo = yield (0, utils_1.getActorInfo)(targetId + ".json");
     const username = req.params.username;
-    const actorInfo = yield (0, utils_1.getActorInfo)(`https://${localDomain}/u/${username}.json`);
     const follow = (0, utils_json_1.createFollowActivity)(username, localDomain, new URL(targetId));
     console.log(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow);
-    const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, actorInfo.publicKey.id, actorInfo.privateKey);
+    const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, localDomain, username);
     if (response.ok) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
         res.sendStatus(200);
     }
     else
         res.send({ error: "error" });
+}));
+/**
+ * Creates, saves and sends a note activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
+router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const localDomain = req.app.get("localDomain");
+    const content = req.body.content;
+    const name = req.body.name;
+    const addressedTo = req.body.addressedTo;
+    const username = req.params.username;
+    const note = (0, utils_json_1.createNoteObject)(name, content, username, localDomain);
+    const create = (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
+    console.log(activitypub_core_types_1.AP.ActivityTypes.CREATE, create);
+    for (let inbox of addressedTo) {
+        console.log("inbox", inbox);
+        const response = yield (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, localDomain, req.params.username);
+        if (response.ok) {
+            console.log("saving create note", create);
+            yield (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)));
+        }
+        else {
+            console.log("error", yield response.text());
+        }
+    }
+    res.end("finished creating note");
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //   const webfingerTarget = await getWebfinger(req.params.target);
+    //   const selfTarget: any[] = webfingerTarget.links.filter((link: any) => {
+    //     return link.rel == "self";
+    //   });
+    //   const targetId = selfTarget[0].href;
+    //   const targetInfo = await getActorInfo(targetId + ".json");
+    //   const username = req.params.username;
+    //   const actorInfo = await getActorInfo(
+    //     `https://${localDomain}/u/${username}.json`
+    //   );
+    //   const follow = createFollowActivity(
+    //     username,
+    //     localDomain,
+    //     new URL(targetId)
+    //   );
+    //   if (response.ok) {
+    //     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
+    //     res.sendStatus(200);
+    //   } else res.send({ error: "error" });
 }));
 //# sourceMappingURL=activityFed.js.map

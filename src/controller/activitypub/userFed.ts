@@ -117,13 +117,9 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
 
       await save(activity.type.toString(), activity);
 
-      const accept = createAcceptActivity(
-        req.params.username,
-        req.app.get("localDomain"),
-        activity
-      );
-
-      await save("accept", JSON.parse(JSON.stringify(accept)));
+      const localDomain = req.app.get("localDomain");
+      const username = req.params.username;
+      const accept = createAcceptActivity(username, localDomain, activity);
 
       const userInfo = await getActorInfo(
         (<URL>activity.actor).toString() + ".json"
@@ -137,8 +133,8 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
         <URL>userInfo.inbox,
         "POST",
         accept,
-        localUserInfo.publicKey.id,
-        localUserInfo.privateKey
+        localDomain,
+        username
       );
       break;
   }

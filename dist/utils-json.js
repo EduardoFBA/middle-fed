@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createUser = exports.createUndoActivity = exports.createFollowActivity = exports.createDeleteActivity = exports.createAcceptActivity = void 0;
+exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createFollowActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 function createActivity(username, domain, activityType) {
@@ -8,6 +8,7 @@ function createActivity(username, domain, activityType) {
     activity["@context"] = "https://www.w3.org/ns/activitystreams";
     activity.id = new URL(`https://${domain}/activity/${activityType}/${(0, crypto_1.randomUUID)()}`);
     activity.actor = new URL(`https://${domain}/u/${username}`);
+    activity.published = new Date();
     return activity;
 }
 function createAcceptActivity(username, domain, activity) {
@@ -17,13 +18,14 @@ function createAcceptActivity(username, domain, activity) {
     return accept;
 }
 exports.createAcceptActivity = createAcceptActivity;
-function createDeleteActivity(username, domain, activity) {
-    const del = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.DELETE));
-    del.type = activitypub_core_types_1.AP.ActivityTypes.DELETE;
-    del.object = activity;
-    return del;
+function createCreateActivity(username, domain, object) {
+    const create = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.CREATE));
+    create.actor = new URL(`https://${domain}/u/${username}`);
+    create.type = activitypub_core_types_1.AP.ActivityTypes.CREATE;
+    create.object = object;
+    return create;
 }
-exports.createDeleteActivity = createDeleteActivity;
+exports.createCreateActivity = createCreateActivity;
 function createFollowActivity(username, domain, targetId) {
     const follow = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.FOLLOW));
     follow.type = activitypub_core_types_1.AP.ActivityTypes.FOLLOW;
@@ -38,6 +40,27 @@ function createUndoActivity(username, domain, activity) {
     return undo;
 }
 exports.createUndoActivity = createUndoActivity;
+function createObject(name, username, domain, objectType) {
+    const object = {};
+    object["@context"] = "https://www.w3.org/ns/activitystreams";
+    object.id = new URL(`https://${domain}/u/${username}/${objectType}/${(0, crypto_1.randomUUID)()}`);
+    object.name = name;
+    return object;
+}
+function createNoteObject(name, content, username, domain) {
+    const note = (createObject(name, username, domain, activitypub_core_types_1.AP.CoreObjectTypes.NOTE));
+    note.type = activitypub_core_types_1.AP.CoreObjectTypes.NOTE;
+    note.content = content;
+    return note;
+}
+exports.createNoteObject = createNoteObject;
+function wrapObjectInActivity(activityType, object, username, domain) {
+    switch (activityType) {
+        case activitypub_core_types_1.AP.ActivityTypes.CREATE:
+            return createCreateActivity(username, domain, object);
+    }
+}
+exports.wrapObjectInActivity = wrapObjectInActivity;
 function createUser(name, domain, pubkey, prikey) {
     return {
         "@context": [
@@ -46,6 +69,7 @@ function createUser(name, domain, pubkey, prikey) {
         ],
         id: `https://${domain}/u/${name}`,
         type: "Person",
+        account: `${name}@${domain}`,
         preferredUsername: `${name}`,
         followers: `https://${domain}/u/${name}/followers`,
         following: `https://${domain}/u/${name}/following`,
@@ -56,7 +80,7 @@ function createUser(name, domain, pubkey, prikey) {
             owner: `https://${domain}/u/${name}`,
             publicKeyPem: pubkey,
         },
-        privateKey: prikey,
+        privateKey: prikey, //TODO: change private key location to make it actually private
     };
 }
 exports.createUser = createUser;

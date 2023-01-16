@@ -12,6 +12,7 @@ function createActivity(
     `https://${domain}/activity/${activityType}/${randomUUID()}`
   );
   activity.actor = new URL(`https://${domain}/u/${username}`);
+  activity.published = new Date();
 
   return activity;
 }
@@ -30,18 +31,19 @@ export function createAcceptActivity(
   return accept;
 }
 
-export function createDeleteActivity(
+export function createCreateActivity(
   username: string,
   domain: string,
-  activity: any
+  object: AP.CoreObject
 ) {
-  const del = <AP.Delete>(
-    createActivity(username, domain, AP.ActivityTypes.DELETE)
+  const create = <AP.Create>(
+    createActivity(username, domain, AP.ActivityTypes.CREATE)
   );
-  del.type = AP.ActivityTypes.DELETE;
-  del.object = activity;
+  create.actor = new URL(`https://${domain}/u/${username}`);
+  create.type = AP.ActivityTypes.CREATE;
+  create.object = object;
 
-  return del;
+  return create;
 }
 
 export function createFollowActivity(
@@ -70,6 +72,49 @@ export function createUndoActivity(
   return undo;
 }
 
+function createObject(
+  name: string,
+  username: string,
+  domain: string,
+  objectType: string
+) {
+  const object = <AP.CoreObject>{};
+  object["@context"] = "https://www.w3.org/ns/activitystreams";
+  object.id = new URL(
+    `https://${domain}/u/${username}/${objectType}/${randomUUID()}`
+  );
+  object.name = name;
+
+  return object;
+}
+
+export function createNoteObject(
+  name: string,
+  content: string,
+  username: string,
+  domain: string
+) {
+  const note = <AP.Note>(
+    createObject(name, username, domain, AP.CoreObjectTypes.NOTE)
+  );
+  note.type = AP.CoreObjectTypes.NOTE;
+  note.content = content;
+
+  return note;
+}
+
+export function wrapObjectInActivity(
+  activityType: string,
+  object: AP.CoreObject,
+  username: string,
+  domain: string
+) {
+  switch (activityType) {
+    case AP.ActivityTypes.CREATE:
+      return createCreateActivity(username, domain, object);
+  }
+}
+
 export function createUser(
   name: string,
   domain: string,
@@ -84,6 +129,7 @@ export function createUser(
 
     id: `https://${domain}/u/${name}`,
     type: "Person",
+    account: `${name}@${domain}`,
     preferredUsername: `${name}`,
     followers: `https://${domain}/u/${name}/followers`,
     following: `https://${domain}/u/${name}/following`,
@@ -95,7 +141,7 @@ export function createUser(
       owner: `https://${domain}/u/${name}`,
       publicKeyPem: pubkey,
     },
-    privateKey: prikey,
+    privateKey: prikey, //TODO: change private key location to make it actually private
   };
 }
 
