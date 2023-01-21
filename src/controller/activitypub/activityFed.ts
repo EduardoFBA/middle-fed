@@ -63,9 +63,7 @@ router.delete(
         );
 
         if (response.ok) {
-          const query = new Query();
-          query.value = follow.id;
-          remove(AP.ActivityTypes.FOLLOW, [query]);
+          remove(AP.ActivityTypes.FOLLOW, [new Query(follow.id)]);
           res.send("finished");
         }
         break;

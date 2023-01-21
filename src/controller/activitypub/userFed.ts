@@ -4,7 +4,8 @@ import { Readable } from "stream";
 import {
   activityAlreadyExists,
   getActorInfo,
-  list,
+  Query,
+  remove,
   removeActivity,
   save,
   searchByField,
@@ -76,14 +77,6 @@ router.get("/:username/following", async (req: Request, res: Response) => {
 });
 
 /**
- * Gets user's inbox
- * @param username
- */
-router.get("/:username/inbox", async (req: Request, res: Response) => {
-  res.send(await list("inbox"));
-});
-
-/**
  * Posts on the user's inbox
  * @param username
  * @requires activity - body should have an activity to be posted
@@ -92,27 +85,16 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
   const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-  console.log("post inbox", activity);
+
+  if (activity == null || activity.id == null) {
+    res.sendStatus(400);
+    return;
+  }
 
   switch (activity.type) {
-    case AP.ActivityTypes.UNDO:
-      const undoActivity: AP.Undo = <AP.Undo>activity;
-      if (
-        undoActivity == null ||
-        undoActivity.id == null ||
-        undoActivity.object == null
-      )
-        return;
-
-      await removeActivity(undoActivity);
-
-      break;
-
-    default:
-      if (activity.id == null) return;
-
+    case AP.ActivityTypes.FOLLOW:
       if (await activityAlreadyExists(activity)) {
-        res.end("activity already exist");
+        res.status(409).send("Activity already exists");
         return;
       }
 
@@ -126,13 +108,39 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
         (<URL>activity.actor).toString() + ".json"
       );
 
-      await sendSignedRequest(
+      sendSignedRequest(
         <URL>userInfo.inbox,
         "POST",
         accept,
         localDomain,
         username
-      );
+      )
+        .then(() => res.sendStatus(200))
+        .catch(() => {
+          remove(AP.ActivityTypes.FOLLOW, [new Query(activity.id)]);
+          res.sendStatus(500);
+        });
+      break;
+
+    case AP.ActivityTypes.UNDO:
+      const undoActivity: AP.Undo = <AP.Undo>activity;
+      if (undoActivity.actor == null || undoActivity.object == null) {
+        res.status(400).send("Activity missing required fields");
+        return;
+      }
+
+      removeActivity(undoActivity).then(() => res.sendStatus(200));
+
+      break;
+
+    default:
+      if (await activityAlreadyExists(activity)) {
+        res.status(409).send("Activity already exists");
+        return;
+      }
+
+      save(activity.type.toString(), activity).then(() => res.sendStatus(200));
+
       break;
   }
 });

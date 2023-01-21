@@ -6,6 +6,10 @@ import fetch from "node-fetch";
 const db = firestore();
 
 export class Query {
+  constructor(value: any) {
+    this.value = value;
+  }
+
   fieldPath: string | firestore.FieldPath = "id";
   opStr: firestore.WhereFilterOp = "==";
   value: any;
@@ -86,11 +90,9 @@ export async function removeActivity(undoActivity: AP.Undo) {
   const targetActivity = <AP.Activity>undoActivity.object;
   switch (targetActivity.type) {
     case AP.ActivityTypes.FOLLOW:
-      const query = new Query();
-      query.fieldPath = "id";
-      query.opStr = "==";
-      query.value = targetActivity.id.toString();
-      remove(AP.ActivityTypes.FOLLOW, [query]);
+      remove(AP.ActivityTypes.FOLLOW, [
+        new Query(targetActivity.id.toString()),
+      ]);
       break;
     default:
       return "ActivityType not supported or doesn't exist";
@@ -105,18 +107,19 @@ export async function activityAlreadyExists(
   switch (activity.type) {
     case AP.ActivityTypes.FOLLOW:
       const follow = <AP.Follow>activity;
-      const q1 = new Query();
+      const q1 = new Query(follow.actor);
       q1.fieldPath = "actor";
-      q1.value = follow.actor;
 
-      const q2 = new Query();
+      const q2 = new Query(follow.object);
       q2.fieldPath = "object";
-      q2.value = follow.object;
 
-      const result = await search(AP.ActivityTypes.FOLLOW, [q1, q2]);
-      return !!result.length;
+      const followSearch = await search(AP.ActivityTypes.FOLLOW, [q1, q2]);
+      return !!followSearch.length;
     default:
-      return new Promise(() => false);
+      const result = await search(activity.type as string, [
+        new Query(activity.id),
+      ]);
+      return !!result.length;
   }
 }
 

@@ -84,13 +84,6 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
     res.send(yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${req.params.username}`));
 }));
 /**
- * Gets user's inbox
- * @param username
- */
-router.get("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.list)("inbox"));
-}));
-/**
  * Posts on the user's inbox
  * @param username
  * @requires activity - body should have an activity to be posted
@@ -99,21 +92,14 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
     const activity = JSON.parse(rawBody);
-    console.log("post inbox", activity);
+    if (activity == null || activity.id == null) {
+        res.sendStatus(400);
+        return;
+    }
     switch (activity.type) {
-        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
-            const undoActivity = activity;
-            if (undoActivity == null ||
-                undoActivity.id == null ||
-                undoActivity.object == null)
-                return;
-            yield (0, utils_1.removeActivity)(undoActivity);
-            break;
-        default:
-            if (activity.id == null)
-                return;
+        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
             if (yield (0, utils_1.activityAlreadyExists)(activity)) {
-                res.end("activity already exist");
+                res.status(409).send("Activity already exists");
                 return;
             }
             yield (0, utils_1.save)(activity.type.toString(), activity);
@@ -121,7 +107,27 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             const username = req.params.username;
             const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
             const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString() + ".json");
-            yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username);
+            (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
+                .then(() => res.sendStatus(200))
+                .catch(() => {
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [new utils_1.Query(activity.id)]);
+                res.sendStatus(500);
+            });
+            break;
+        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
+            const undoActivity = activity;
+            if (undoActivity.actor == null || undoActivity.object == null) {
+                res.status(400).send("Activity missing required fields");
+                return;
+            }
+            (0, utils_1.removeActivity)(undoActivity).then(() => res.sendStatus(200));
+            break;
+        default:
+            if (yield (0, utils_1.activityAlreadyExists)(activity)) {
+                res.status(409).send("Activity already exists");
+                return;
+            }
+            (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
             break;
     }
 }));
