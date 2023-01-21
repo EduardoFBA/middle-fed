@@ -92,6 +92,7 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
   const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  console.log("post inbox", activity);
 
   switch (activity.type) {
     case AP.ActivityTypes.UNDO:
@@ -111,7 +112,7 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       if (activity.id == null) return;
 
       if (await activityAlreadyExists(activity)) {
-        res.end("follow activity already exist");
+        res.end("activity already exist");
         return;
       }
 
@@ -123,10 +124,6 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
 
       const userInfo = await getActorInfo(
         (<URL>activity.actor).toString() + ".json"
-      );
-
-      const localUserInfo: any = await getActorInfo(
-        accept.actor.toString() + ".json"
       );
 
       await sendSignedRequest(

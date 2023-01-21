@@ -99,6 +99,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
     const buf = yield buffer(req);
     const rawBody = buf.toString("utf8");
     const activity = JSON.parse(rawBody);
+    console.log("post inbox", activity);
     switch (activity.type) {
         case activitypub_core_types_1.AP.ActivityTypes.UNDO:
             const undoActivity = activity;
@@ -112,7 +113,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             if (activity.id == null)
                 return;
             if (yield (0, utils_1.activityAlreadyExists)(activity)) {
-                res.end("follow activity already exist");
+                res.end("activity already exist");
                 return;
             }
             yield (0, utils_1.save)(activity.type.toString(), activity);
@@ -120,7 +121,6 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             const username = req.params.username;
             const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
             const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString() + ".json");
-            const localUserInfo = yield (0, utils_1.getActorInfo)(accept.actor.toString() + ".json");
             yield (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username);
             break;
     }
