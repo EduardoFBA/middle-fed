@@ -6,13 +6,13 @@ import {
   Query,
   remove,
   save,
-  search,
   searchByField,
   sendSignedRequest,
 } from "../../utils";
 import {
-  createAcceptActivity,
+  createDislikeActivity,
   createFollowActivity,
+  createLikeActivity,
   createNoteObject,
   createUndoActivity,
   wrapObjectInActivity,
@@ -153,8 +153,6 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
     localDomain
   );
 
-  console.log(AP.ActivityTypes.CREATE, create);
-
   for (let inbox of addressedTo) {
     console.log("inbox", inbox);
     const response = await sendSignedRequest(
@@ -173,38 +171,77 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
     }
   }
 
-  res.end("finished creating note");
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //   const webfingerTarget = await getWebfinger(req.params.target);
-  //   const selfTarget: any[] = webfingerTarget.links.filter((link: any) => {
-  //     return link.rel == "self";
-  //   });
-  //   const targetId = selfTarget[0].href;
-  //   const targetInfo = await getActorInfo(targetId + ".json");
-  //   const username = req.params.username;
-  //   const actorInfo = await getActorInfo(
-  //     `https://${localDomain}/u/${username}.json`
-  //   );
-  //   const follow = createFollowActivity(
-  //     username,
-  //     localDomain,
-  //     new URL(targetId)
-  //   );
-  //   if (response.ok) {
-  //     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
-  //     res.sendStatus(200);
-  //   } else res.send({ error: "error" });
+  res.sendStatus(200);
 });
+
+/**
+ * Likes an activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
+router.post("/like/:username/", async (req: Request, res: Response) => {
+  const localDomain = req.app.get("localDomain");
+  const username = req.params.username;
+  const activity = <AP.Activity>req.body.activity;
+
+  const like = createLikeActivity(username, localDomain, activity);
+  const inbox = (activity.actor as AP.Person).inbox.toString();
+
+  const response = await likeOrDislike(
+    like,
+    localDomain,
+    username,
+    new URL(inbox)
+  );
+
+  res.sendStatus(response.status);
+});
+
+/**
+ * Dislikes an activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
+router.post("/dislike/:username/", async (req: Request, res: Response) => {
+  const localDomain = req.app.get("localDomain");
+  const username = req.params.username;
+  const activity = <AP.Activity>req.body.activity;
+
+  const dislike = createDislikeActivity(username, localDomain, activity);
+  const inbox = (activity.actor as AP.Person).inbox.toString();
+
+  const response = await likeOrDislike(
+    dislike,
+    localDomain,
+    username,
+    new URL(inbox)
+  );
+
+  res.sendStatus(response.status);
+});
+
+async function likeOrDislike(
+  likeOrDislike: AP.Like | AP.Dislike,
+  domain: string,
+  username: string,
+  inbox: URL
+) {
+  const response = await sendSignedRequest(
+    inbox,
+    "POST",
+    likeOrDislike,
+    domain,
+    username
+  );
+
+  if (response.ok) {
+    await save(
+      likeOrDislike.type.toString(),
+      JSON.parse(JSON.stringify(likeOrDislike))
+    );
+  } else {
+    console.log("error", await response.text());
+  }
+
+  return response;
+}

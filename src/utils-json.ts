@@ -46,6 +46,20 @@ export function createCreateActivity(
   return create;
 }
 
+export function createDislikeActivity(
+  username: string,
+  domain: string,
+  activity: AP.Activity
+) {
+  const dislike = <AP.Dislike>(
+    createActivity(username, domain, AP.ActivityTypes.DISLIKE)
+  );
+  dislike.type = AP.ActivityTypes.DISLIKE;
+  dislike.object = activity;
+
+  return dislike;
+}
+
 export function createFollowActivity(
   username: string,
   domain: string,
@@ -58,6 +72,18 @@ export function createFollowActivity(
   follow.object = targetId;
 
   return follow;
+}
+
+export function createLikeActivity(
+  username: string,
+  domain: string,
+  activity: AP.Activity
+) {
+  const like = <AP.Like>createActivity(username, domain, AP.ActivityTypes.LIKE);
+  like.type = AP.ActivityTypes.LIKE;
+  like.object = activity;
+
+  return like;
 }
 
 export function createUndoActivity(

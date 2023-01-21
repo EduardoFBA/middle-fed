@@ -99,7 +99,6 @@ router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, v
     const username = req.params.username;
     const note = (0, utils_json_1.createNoteObject)(name, content, username, localDomain);
     const create = (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
-    console.log(activitypub_core_types_1.AP.ActivityTypes.CREATE, create);
     for (let inbox of addressedTo) {
         console.log("inbox", inbox);
         const response = yield (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, localDomain, req.params.username);
@@ -111,39 +110,46 @@ router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, v
             console.log("error", yield response.text());
         }
     }
-    res.end("finished creating note");
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //   const webfingerTarget = await getWebfinger(req.params.target);
-    //   const selfTarget: any[] = webfingerTarget.links.filter((link: any) => {
-    //     return link.rel == "self";
-    //   });
-    //   const targetId = selfTarget[0].href;
-    //   const targetInfo = await getActorInfo(targetId + ".json");
-    //   const username = req.params.username;
-    //   const actorInfo = await getActorInfo(
-    //     `https://${localDomain}/u/${username}.json`
-    //   );
-    //   const follow = createFollowActivity(
-    //     username,
-    //     localDomain,
-    //     new URL(targetId)
-    //   );
-    //   if (response.ok) {
-    //     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
-    //     res.sendStatus(200);
-    //   } else res.send({ error: "error" });
+    res.sendStatus(200);
 }));
+/**
+ * Likes an activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
+router.post("/like/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const localDomain = req.app.get("localDomain");
+    const username = req.params.username;
+    const activity = req.body.activity;
+    const like = (0, utils_json_1.createLikeActivity)(username, localDomain, activity);
+    const inbox = activity.actor.inbox.toString();
+    const response = yield likeOrDislike(like, localDomain, username, new URL(inbox));
+    res.sendStatus(response.status);
+}));
+/**
+ * Dislikes an activity
+ * @param username - name of current user
+ * @param target - username and domain of the target user to follow (@username@domain)
+ */
+router.post("/dislike/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const localDomain = req.app.get("localDomain");
+    const username = req.params.username;
+    const activity = req.body.activity;
+    const dislike = (0, utils_json_1.createDislikeActivity)(username, localDomain, activity);
+    const inbox = activity.actor.inbox.toString();
+    const response = yield likeOrDislike(dislike, localDomain, username, new URL(inbox));
+    res.sendStatus(response.status);
+}));
+function likeOrDislike(likeOrDislike, domain, username, inbox) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield (0, utils_1.sendSignedRequest)(inbox, "POST", likeOrDislike, domain, username);
+        if (response.ok) {
+            yield (0, utils_1.save)(likeOrDislike.type.toString(), JSON.parse(JSON.stringify(likeOrDislike)));
+        }
+        else {
+            console.log("error", yield response.text());
+        }
+        return response;
+    });
+}
 //# sourceMappingURL=activityFed.js.map

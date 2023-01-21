@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createFollowActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
+exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createLikeActivity = exports.createFollowActivity = exports.createDislikeActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 function createActivity(username, domain, activityType) {
@@ -26,6 +26,13 @@ function createCreateActivity(username, domain, object) {
     return create;
 }
 exports.createCreateActivity = createCreateActivity;
+function createDislikeActivity(username, domain, activity) {
+    const dislike = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.DISLIKE));
+    dislike.type = activitypub_core_types_1.AP.ActivityTypes.DISLIKE;
+    dislike.object = activity;
+    return dislike;
+}
+exports.createDislikeActivity = createDislikeActivity;
 function createFollowActivity(username, domain, targetId) {
     const follow = (createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.FOLLOW));
     follow.type = activitypub_core_types_1.AP.ActivityTypes.FOLLOW;
@@ -33,6 +40,13 @@ function createFollowActivity(username, domain, targetId) {
     return follow;
 }
 exports.createFollowActivity = createFollowActivity;
+function createLikeActivity(username, domain, activity) {
+    const like = createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.LIKE);
+    like.type = activitypub_core_types_1.AP.ActivityTypes.LIKE;
+    like.object = activity;
+    return like;
+}
+exports.createLikeActivity = createLikeActivity;
 function createUndoActivity(username, domain, activity) {
     const undo = createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.UNDO);
     undo.type = activitypub_core_types_1.AP.ActivityTypes.UNDO;
