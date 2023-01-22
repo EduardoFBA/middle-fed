@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
+exports.sendSignedRequest = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto = __importStar(require("crypto"));
@@ -79,7 +79,7 @@ function searchByField(collection, field, value) {
     });
 }
 exports.searchByField = searchByField;
-function search(collection, queries) {
+function search(collection, ...queries) {
     return __awaiter(this, void 0, void 0, function* () {
         const colRef = db.collection(collection);
         let query;
@@ -135,12 +135,10 @@ function activityAlreadyExists(activity) {
                 q1.fieldPath = "actor";
                 const q2 = new Query(follow.object);
                 q2.fieldPath = "object";
-                const followSearch = yield search(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [q1, q2]);
+                const followSearch = yield search(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, q1, q2);
                 return !!followSearch.length;
             default:
-                const result = yield search(activity.type, [
-                    new Query(activity.id),
-                ]);
+                const result = yield search(activity.type, new Query(activity.id));
                 return !!result.length;
         }
     });
@@ -175,6 +173,10 @@ function extractHandles(resource) {
         : [string.split("@")[0], string.split("@")[1]];
 }
 exports.extractHandles = extractHandles;
+function stripHtml(input) {
+    return input.replace(/(<([^>]+)>)/gi, "");
+}
+exports.stripHtml = stripHtml;
 function sendSignedRequest(endpoint, method, object, domain, username) {
     return __awaiter(this, void 0, void 0, function* () {
         const actorInfo = yield getActorInfo(`https://${domain}/u/${username}.json`);

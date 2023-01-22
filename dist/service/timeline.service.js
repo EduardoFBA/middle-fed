@@ -9,24 +9,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFollowersActivity = exports.getFollowers = void 0;
+exports.getNotes = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
-function getFollowers(username) {
+function getNotes(...queries) {
     return __awaiter(this, void 0, void 0, function* () {
-        const actors = [];
-        const follows = yield getFollowersActivity(username);
-        for (const follow of follows) {
-            actors.push((yield (0, utils_1.getActorInfo)(follow.object.toString() + ".json")));
-        }
-        return actors;
+        const typeObjectQuery = new utils_1.Query(activitypub_core_types_1.AP.CoreObjectTypes.NOTE);
+        typeObjectQuery.fieldPath = "object.type";
+        const creates = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.CREATE, ...queries, typeObjectQuery);
+        return creates.map((create) => {
+            const note = create.object;
+            note.content = (0, utils_1.stripHtml)(note.content);
+            return note;
+        });
     });
 }
-exports.getFollowers = getFollowers;
-function getFollowersActivity(username) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${username}`);
-    });
-}
-exports.getFollowersActivity = getFollowersActivity;
-//# sourceMappingURL=user.service.js.map
+exports.getNotes = getNotes;
+//# sourceMappingURL=timeline.service.js.map

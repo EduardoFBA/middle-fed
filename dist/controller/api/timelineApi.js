@@ -9,22 +9,39 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.timelineFedRouter = void 0;
+exports.timelineApiRouter = void 0;
 const express_1 = require("express");
-exports.timelineFedRouter = (0, express_1.Router)();
+const timeline_service_1 = require("../../service/timeline.service");
+const user_service_1 = require("../../service/user.service");
+const utils_1 = require("../../utils");
+exports.timelineApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
-exports.timelineFedRouter.use("/timeline", router);
+exports.timelineApiRouter.use("/timeline", router);
 /**
  * Gets an activity
  * @param {AP.ActivityType} activityType - type of activity
  * @param activityId - id of the activity to get
  */
-router.get("/following/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    //   const followers = await getFollowers(req.params.username);
-    //   const outboxes:URL[] = followers.map(x=>x.outbox as URL);
-    //   for (const outbox of outboxes) {
-    //     sendSignedRequest(inbox, "GET")
-    //   }
-    return [];
+router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+    const userQuery = new utils_1.Query(`https://${domain}/u/${username}`);
+    userQuery.fieldPath = "actor";
+    res.send(yield (0, timeline_service_1.getNotes)(userQuery));
+}));
+/**
+ * Gets an activity
+ * @param {AP.ActivityType} activityType - type of activity
+ * @param activityId - id of the activity to get
+ */
+router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, _] = (0, utils_1.extractHandles)(req.params.account);
+    const followers = yield (0, user_service_1.getFollowers)(username);
+    const queries = [];
+    for (const follower of followers) {
+        const query = new utils_1.Query(follower.id.toString());
+        query.fieldPath = "actor";
+        queries.push(query);
+    }
+    res.send(yield (0, timeline_service_1.getNotes)(...queries));
 }));
 //# sourceMappingURL=timelineApi.js.map

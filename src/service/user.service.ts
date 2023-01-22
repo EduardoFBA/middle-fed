@@ -7,7 +7,7 @@ export async function getFollowers(username: string): Promise<AP.Person[]> {
 
   for (const follow of follows) {
     actors.push(
-      (await getActorInfo(follow.actor.toString() + ".json")) as AP.Person
+      (await getActorInfo(follow.object.toString() + ".json")) as AP.Person
     );
   }
 

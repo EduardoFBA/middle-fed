@@ -1,6 +1,7 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import { Readable } from "stream";
+import { getFollowersActivity } from "../../service/user.service";
 import {
   activityAlreadyExists,
   getActorInfo,
@@ -67,13 +68,7 @@ router.get("/:username/followers", async (req: Request, res: Response) => {
  * @param username
  */
 router.get("/:username/following", async (req: Request, res: Response) => {
-  res.send(
-    await searchByField(
-      AP.ActivityTypes.FOLLOW,
-      "actor",
-      `https://middle-fed.onrender.com/u/${req.params.username}`
-    )
-  );
+  res.send(await getFollowersActivity(req.params.username));
 });
 
 /**

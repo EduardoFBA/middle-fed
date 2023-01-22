@@ -1,22 +1,33 @@
-import { Request, Response, Router } from "express";
 import * as crypto from "crypto";
-import { save } from "../../utils";
+import { Request, Response, Router } from "express";
+import { getFollowers } from "../../service/user.service";
+import { extractHandles, save } from "../../utils";
 import { createUser, createWebfinger } from "../../utils-json";
 
 export const userApiRouter = Router();
+const router = Router();
+userApiRouter.use("/u", router);
 
-userApiRouter.get("/u", (req: Request, res: Response) => {
-  res.sendFile("user.html", { root: "src/view" }, (err) => {
-    if (err) res.send(err);
-  });
+/**
+ * Gets list of user's followers
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/followers/:account", async (req: Request, res: Response) => {
+  const [username, _] = extractHandles(req.params.account);
+  res.send(await getFollowers(username));
 });
 
-userApiRouter.post("/user/", (req: Request, res: Response) => {
+/**
+ * Creates a new actor for user
+ */
+router.post("/", (req: Request, res: Response) => {
   const account = req.body.account;
   if (account === undefined) {
-    return res.status(400).json({
-      msg: 'Bad request. Please make sure "account" is a property in the POST body.',
-    });
+    return res
+      .status(400)
+      .send(
+        'Bad request. Please make sure "account" is a property in the POST body.'
+      );
   }
   // create keypair
   crypto.generateKeyPair(

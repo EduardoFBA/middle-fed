@@ -19,6 +19,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.userFedRouter = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const express_1 = require("express");
+const user_service_1 = require("../../service/user.service");
 const utils_1 = require("../../utils");
 const utils_json_1 = require("../../utils-json");
 exports.userFedRouter = (0, express_1.Router)();
@@ -81,7 +82,7 @@ router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 
  * @param username
  */
 router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${req.params.username}`));
+    res.send(yield (0, user_service_1.getFollowersActivity)(req.params.username));
 }));
 /**
  * Posts on the user's inbox

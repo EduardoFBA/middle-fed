@@ -52,7 +52,7 @@ export async function searchByField(
 
 export async function search(
   collection: string,
-  queries: Query[]
+  ...queries: Query[]
 ): Promise<any[]> {
   const colRef = db.collection(collection);
   let query: FirebaseFirestore.Query;
@@ -113,12 +113,13 @@ export async function activityAlreadyExists(
       const q2 = new Query(follow.object);
       q2.fieldPath = "object";
 
-      const followSearch = await search(AP.ActivityTypes.FOLLOW, [q1, q2]);
+      const followSearch = await search(AP.ActivityTypes.FOLLOW, q1, q2);
       return !!followSearch.length;
     default:
-      const result = await search(activity.type as string, [
-        new Query(activity.id),
-      ]);
+      const result = await search(
+        activity.type as string,
+        new Query(activity.id)
+      );
       return !!result.length;
   }
 }
@@ -147,6 +148,10 @@ export function extractHandles(resource: string): string[] {
   return string.startsWith("@")
     ? [string.split("@")[1], string.split("@")[2]]
     : [string.split("@")[0], string.split("@")[1]];
+}
+
+export function stripHtml(input: string) {
+  return input.replace(/(<([^>]+)>)/gi, "");
 }
 
 export async function sendSignedRequest(
