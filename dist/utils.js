@@ -98,7 +98,7 @@ function search(collection, ...queries) {
     });
 }
 exports.search = search;
-function remove(collection, queries) {
+function remove(collection, ...queries) {
     const colRef = db.collection(collection);
     let query;
     for (let i = 0; i < queries.length; i++) {
@@ -115,9 +115,7 @@ function removeActivity(undoActivity) {
         const targetActivity = undoActivity.object;
         switch (targetActivity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-                remove(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [
-                    new Query(targetActivity.id.toString()),
-                ]);
+                remove(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new Query(targetActivity.id.toString()));
                 break;
             default:
                 return "ActivityType not supported or doesn't exist";

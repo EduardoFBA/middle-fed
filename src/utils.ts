@@ -72,7 +72,7 @@ export async function search(
   return docs;
 }
 
-export function remove(collection: string, queries: Query[]): void {
+export function remove(collection: string, ...queries: Query[]): void {
   const colRef = db.collection(collection);
   let query: FirebaseFirestore.Query;
   for (let i = 0; i < queries.length; i++) {
@@ -90,9 +90,7 @@ export async function removeActivity(undoActivity: AP.Undo) {
   const targetActivity = <AP.Activity>undoActivity.object;
   switch (targetActivity.type) {
     case AP.ActivityTypes.FOLLOW:
-      remove(AP.ActivityTypes.FOLLOW, [
-        new Query(targetActivity.id.toString()),
-      ]);
+      remove(AP.ActivityTypes.FOLLOW, new Query(targetActivity.id.toString()));
       break;
     default:
       return "ActivityType not supported or doesn't exist";

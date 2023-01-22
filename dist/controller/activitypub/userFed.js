@@ -98,6 +98,18 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
         return;
     }
     switch (activity.type) {
+        case activitypub_core_types_1.AP.ActivityTypes.DELETE:
+            const del = activity;
+            if (del.object) {
+                if (del.actor === del.object) {
+                    (0, utils_1.remove)("actor", new utils_1.Query(del.actor.toString()));
+                }
+                else if (del.object.id != null) {
+                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, new utils_1.Query(del.object.id.toString()));
+                }
+            }
+            res.sendStatus(200);
+            break;
         case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
             if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                 res.status(409).send("Activity already exists");
@@ -111,7 +123,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                 .then(() => res.sendStatus(200))
                 .catch(() => {
-                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, [new utils_1.Query(activity.id)]);
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
                 res.sendStatus(500);
             });
             break;

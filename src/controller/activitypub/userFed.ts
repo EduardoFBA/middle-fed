@@ -87,6 +87,22 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
   }
 
   switch (activity.type) {
+    case AP.ActivityTypes.DELETE:
+      const del = <AP.Delete>activity;
+
+      if (del.object) {
+        if (del.actor === del.object) {
+          remove("actor", new Query(del.actor.toString()));
+        } else if ((del.object as any).id != null) {
+          remove(
+            AP.ActivityTypes.CREATE,
+            new Query((del.object as any).id.toString())
+          );
+        }
+      }
+
+      res.sendStatus(200);
+      break;
     case AP.ActivityTypes.FOLLOW:
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
@@ -112,7 +128,7 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       )
         .then(() => res.sendStatus(200))
         .catch(() => {
-          remove(AP.ActivityTypes.FOLLOW, [new Query(activity.id)]);
+          remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
           res.sendStatus(500);
         });
       break;

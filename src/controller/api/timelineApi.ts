@@ -9,9 +9,8 @@ const router = Router();
 timelineApiRouter.use("/timeline", router);
 
 /**
- * Gets an activity
- * @param {AP.ActivityType} activityType - type of activity
- * @param activityId - id of the activity to get
+ * Gets user's posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
@@ -22,9 +21,8 @@ router.get("/user/:account", async (req: Request, res: Response) => {
 });
 
 /**
- * Gets an activity
- * @param {AP.ActivityType} activityType - type of activity
- * @param activityId - id of the activity to get
+ * gets user's following's posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/following/:account", async (req: Request, res: Response) => {
   const [username, _] = extractHandles(req.params.account);

@@ -18,9 +18,8 @@ exports.timelineApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.timelineApiRouter.use("/timeline", router);
 /**
- * Gets an activity
- * @param {AP.ActivityType} activityType - type of activity
- * @param activityId - id of the activity to get
+ * Gets user's posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
@@ -29,9 +28,8 @@ router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, fun
     res.send(yield (0, timeline_service_1.getNotes)(userQuery));
 }));
 /**
- * Gets an activity
- * @param {AP.ActivityType} activityType - type of activity
- * @param activityId - id of the activity to get
+ * gets user's following's posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, _] = (0, utils_1.extractHandles)(req.params.account);
