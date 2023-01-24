@@ -1,9 +1,11 @@
 import { AP } from "activitypub-core-types";
-import { firestore } from "firebase-admin";
-import * as crypto from "crypto";
+import { firestore, storage } from "firebase-admin";
+import { createHash, createSign, randomUUID, Sign } from "crypto";
 import fetch from "node-fetch";
+import { PassThrough, Readable } from "stream";
 
 const db = firestore();
+const bucket = storage().bucket();
 
 export class Query {
   constructor(value: any) {
@@ -13,6 +15,71 @@ export class Query {
   fieldPath: string | firestore.FieldPath = "id";
   opStr: firestore.WhereFilterOp = "==";
   value: any;
+}
+
+export class MimeTypes {
+  public static GIF = {
+    base64Prefix: "R0lGOD",
+    fileSuffix: ".gif",
+    fullType: "image/gif",
+  };
+  public static PNG = {
+    base64Prefix: "iVBORw0KG",
+    fileSuffix: ".png",
+    fullType: "image/png",
+  };
+  public static JPG = {
+    base64Prefix: "/9j/4",
+    fileSuffix: ".jpg",
+    fullType: "image/jpg",
+  };
+}
+
+export function getMimeByBase64(base64Str: string) {
+  if (base64Str.startsWith(MimeTypes.GIF.base64Prefix)) return MimeTypes.GIF;
+  if (base64Str.startsWith(MimeTypes.PNG.base64Prefix)) return MimeTypes.PNG;
+  if (base64Str.startsWith(MimeTypes.JPG.base64Prefix)) return MimeTypes.JPG;
+
+  console.log("error", base64Str.slice(0, 25));
+  return;
+}
+
+export async function getFromStorage(filename: string) {
+  return bucket.getFilesStream({ prefix: filename });
+}
+
+export async function uploadToStorage(
+  base64Str: string,
+  filename: string,
+  mime: {
+    base64Prefix: string;
+    fileSuffix: string;
+    fullType: string;
+  }
+): Promise<string> {
+  bucket.deleteFiles({ prefix: filename });
+
+  const file = bucket.file(filename + mime.fileSuffix);
+
+  var bufferStream = new PassThrough();
+  bufferStream.end(Buffer.from(base64Str, "base64"));
+
+  const uuid = randomUUID();
+  bufferStream.pipe(
+    file.createWriteStream({
+      metadata: {
+        contentType: mime.fullType,
+        metadata: {
+          firebaseStorageDownloadTokens: uuid,
+        },
+      },
+      public: true,
+      validation: "md5",
+    })
+  );
+  return `https://firebasestorage.googleapis.com/v0/b/middle-fed.appspot.com/o/${encodeURIComponent(
+    filename + mime.fileSuffix
+  )}?alt=media&token=${uuid}`;
 }
 
 export async function list(collection: string): Promise<any[]> {
@@ -86,6 +153,20 @@ export function remove(collection: string, ...queries: Query[]): void {
   );
 }
 
+export async function update(
+  collection: string,
+  object: any,
+  objectId: string
+) {
+  const colRef = db.collection(collection);
+
+  colRef
+    .where("id", "==", objectId)
+    .onSnapshot((snapshot) =>
+      snapshot.forEach(async (result) => await result.ref.set(object))
+    );
+}
+
 export async function removeActivity(undoActivity: AP.Undo) {
   const targetActivity = <AP.Activity>undoActivity.object;
   switch (targetActivity.type) {
@@ -128,7 +209,11 @@ export async function getActorId(userId: string): Promise<AP.Actor> {
 }
 
 export async function getActorInfo(userId: string): Promise<AP.Actor> {
-  const promise = await fetch(userId);
+  const promise = await fetch(userId, {
+    headers: {
+      Accept: "application/activity+json",
+    },
+  });
   return await promise.json();
 }
 
@@ -151,6 +236,13 @@ export function extractHandles(resource: string): string[] {
 export function stripHtml(input: string) {
   return input.replace(/(<([^>]+)>)/gi, "");
 }
+export async function buffer(readable: Readable) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
 
 export async function sendSignedRequest(
   endpoint: URL,
@@ -165,10 +257,7 @@ export async function sendSignedRequest(
   const requestHeaders = {
     host: endpoint.hostname,
     date: new Date().toUTCString(),
-    digest: `SHA-256=${crypto
-      .createHash("sha256")
-      .update(activity)
-      .digest("base64")}`,
+    digest: `SHA-256=${createHash("sha256").update(activity).digest("base64")}`,
   };
 
   // Generate the signature header
@@ -227,7 +316,7 @@ function getSignString(target, method, headers, headerNames) {
 }
 
 function signSha256(privateKey: string, stringToSign: string) {
-  const signer: crypto.Sign = crypto.createSign("sha256");
+  const signer: Sign = createSign("sha256");
   signer.update(stringToSign);
   const signature: Buffer = signer.sign(privateKey);
   signer.end();

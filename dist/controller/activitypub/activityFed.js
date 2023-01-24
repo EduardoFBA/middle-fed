@@ -24,6 +24,8 @@ exports.activityFedRouter.use("/activity", router);
  * @param activityType - type of activity
  */
 router.delete("/:username/undo/:activityId/:activityType", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // FIXME: this should be in activityApi
+    // refactor this whole endpoint
     const localDomain = req.app.get("localDomain");
     const result = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "id", `https://${localDomain}/activity/Follow/${req.params.activityId}`));
     if (!result.length) {
@@ -34,7 +36,8 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
         case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
             const follow = result[0];
             const objectActor = follow.object;
-            const targetInfo = yield (0, utils_1.getActorInfo)(objectActor + ".json");
+            const actorUrl = objectActor.id ? objectActor.id : objectActor;
+            const targetInfo = yield (0, utils_1.getActorInfo)(actorUrl);
             const username = req.params.username;
             const undo = (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
             const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, localDomain, username);
@@ -72,7 +75,7 @@ router.post("/:username/follow/:target", (req, res) => __awaiter(void 0, void 0,
         return link.rel == "self";
     });
     const targetId = selfTarget[0].href;
-    const targetInfo = yield (0, utils_1.getActorInfo)(targetId + ".json");
+    const targetInfo = yield (0, utils_1.getActorInfo)(targetId);
     const username = req.params.username;
     const follow = (0, utils_json_1.createFollowActivity)(username, localDomain, new URL(targetId));
     console.log(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow);

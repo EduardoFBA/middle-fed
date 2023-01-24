@@ -9,15 +9,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFollowersActivity = exports.getFollowers = void 0;
+exports.getFollowersActivity = exports.getFollowers = exports.updateActor = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
+function updateActor(actor) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield (0, utils_1.update)("actor", actor, actor.id.toString());
+        return "";
+    });
+}
+exports.updateActor = updateActor;
 function getFollowers(username) {
     return __awaiter(this, void 0, void 0, function* () {
         const actors = [];
         const follows = yield getFollowersActivity(username);
         for (const follow of follows) {
-            actors.push((yield (0, utils_1.getActorInfo)(follow.object.toString() + ".json")));
+            try {
+                const actorInfo = yield (0, utils_1.getActorInfo)(follow.object.toString());
+                actors.push(actorInfo);
+            }
+            catch (e) {
+                console.log(e);
+            }
         }
         return actors;
     });

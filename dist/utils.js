@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,16 +8,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.Query = void 0;
+exports.sendSignedRequest = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
-const crypto = __importStar(require("crypto"));
+const crypto_1 = require("crypto");
 const node_fetch_1 = __importDefault(require("node-fetch"));
+const stream_1 = require("stream");
 const db = (0, firebase_admin_1.firestore)();
+const bucket = (0, firebase_admin_1.storage)().bucket();
 class Query {
     constructor(value) {
         this.fieldPath = "id";
@@ -49,6 +35,62 @@ class Query {
     }
 }
 exports.Query = Query;
+class MimeTypes {
+}
+exports.MimeTypes = MimeTypes;
+MimeTypes.GIF = {
+    base64Prefix: "R0lGOD",
+    fileSuffix: ".gif",
+    fullType: "image/gif",
+};
+MimeTypes.PNG = {
+    base64Prefix: "iVBORw0KG",
+    fileSuffix: ".png",
+    fullType: "image/png",
+};
+MimeTypes.JPG = {
+    base64Prefix: "/9j/4",
+    fileSuffix: ".jpg",
+    fullType: "image/jpg",
+};
+function getMimeByBase64(base64Str) {
+    if (base64Str.startsWith(MimeTypes.GIF.base64Prefix))
+        return MimeTypes.GIF;
+    if (base64Str.startsWith(MimeTypes.PNG.base64Prefix))
+        return MimeTypes.PNG;
+    if (base64Str.startsWith(MimeTypes.JPG.base64Prefix))
+        return MimeTypes.JPG;
+    console.log("error", base64Str.slice(0, 25));
+    return;
+}
+exports.getMimeByBase64 = getMimeByBase64;
+function getFromStorage(filename) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return bucket.getFilesStream({ prefix: filename });
+    });
+}
+exports.getFromStorage = getFromStorage;
+function uploadToStorage(base64Str, filename, mime) {
+    return __awaiter(this, void 0, void 0, function* () {
+        bucket.deleteFiles({ prefix: filename });
+        const file = bucket.file(filename + mime.fileSuffix);
+        var bufferStream = new stream_1.PassThrough();
+        bufferStream.end(Buffer.from(base64Str, "base64"));
+        const uuid = (0, crypto_1.randomUUID)();
+        bufferStream.pipe(file.createWriteStream({
+            metadata: {
+                contentType: mime.fullType,
+                metadata: {
+                    firebaseStorageDownloadTokens: uuid,
+                },
+            },
+            public: true,
+            validation: "md5",
+        }));
+        return `https://firebasestorage.googleapis.com/v0/b/middle-fed.appspot.com/o/${encodeURIComponent(filename + mime.fileSuffix)}?alt=media&token=${uuid}`;
+    });
+}
+exports.uploadToStorage = uploadToStorage;
 function list(collection) {
     return __awaiter(this, void 0, void 0, function* () {
         const collectionRef = db.collection(collection);
@@ -110,6 +152,15 @@ function remove(collection, ...queries) {
     query.onSnapshot((snapshot) => snapshot.forEach((result) => result.ref.delete()));
 }
 exports.remove = remove;
+function update(collection, object, objectId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const colRef = db.collection(collection);
+        colRef
+            .where("id", "==", objectId)
+            .onSnapshot((snapshot) => snapshot.forEach((result) => __awaiter(this, void 0, void 0, function* () { return yield result.ref.set(object); })));
+    });
+}
+exports.update = update;
 function removeActivity(undoActivity) {
     return __awaiter(this, void 0, void 0, function* () {
         const targetActivity = undoActivity.object;
@@ -151,7 +202,11 @@ function getActorId(userId) {
 exports.getActorId = getActorId;
 function getActorInfo(userId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const promise = yield (0, node_fetch_1.default)(userId);
+        const promise = yield (0, node_fetch_1.default)(userId, {
+            headers: {
+                Accept: "application/activity+json",
+            },
+        });
         return yield promise.json();
     });
 }
@@ -175,6 +230,28 @@ function stripHtml(input) {
     return input.replace(/(<([^>]+)>)/gi, "");
 }
 exports.stripHtml = stripHtml;
+function buffer(readable) {
+    var readable_1, readable_1_1;
+    var e_1, _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const chunks = [];
+        try {
+            for (readable_1 = __asyncValues(readable); readable_1_1 = yield readable_1.next(), !readable_1_1.done;) {
+                const chunk = readable_1_1.value;
+                chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (readable_1_1 && !readable_1_1.done && (_a = readable_1.return)) yield _a.call(readable_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return Buffer.concat(chunks);
+    });
+}
+exports.buffer = buffer;
 function sendSignedRequest(endpoint, method, object, domain, username) {
     return __awaiter(this, void 0, void 0, function* () {
         const actorInfo = yield getActorInfo(`https://${domain}/u/${username}.json`);
@@ -182,10 +259,7 @@ function sendSignedRequest(endpoint, method, object, domain, username) {
         const requestHeaders = {
             host: endpoint.hostname,
             date: new Date().toUTCString(),
-            digest: `SHA-256=${crypto
-                .createHash("sha256")
-                .update(activity)
-                .digest("base64")}`,
+            digest: `SHA-256=${(0, crypto_1.createHash)("sha256").update(activity).digest("base64")}`,
         };
         // Generate the signature header
         const signature = sign(endpoint, method, requestHeaders, actorInfo.publicKey.id, actorInfo.privateKey);
@@ -215,7 +289,7 @@ function getSignString(target, method, headers, headerNames) {
         .join("\n");
 }
 function signSha256(privateKey, stringToSign) {
-    const signer = crypto.createSign("sha256");
+    const signer = (0, crypto_1.createSign)("sha256");
     signer.update(stringToSign);
     const signature = signer.sign(privateKey);
     signer.end();

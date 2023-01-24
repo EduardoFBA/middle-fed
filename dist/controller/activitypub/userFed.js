@@ -8,13 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userFedRouter = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
@@ -25,32 +18,12 @@ const utils_json_1 = require("../../utils-json");
 exports.userFedRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.userFedRouter.use("/u", router);
-function buffer(readable) {
-    var readable_1, readable_1_1;
-    var e_1, _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const chunks = [];
-        try {
-            for (readable_1 = __asyncValues(readable); readable_1_1 = yield readable_1.next(), !readable_1_1.done;) {
-                const chunk = readable_1_1.value;
-                chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (readable_1_1 && !readable_1_1.done && (_a = readable_1.return)) yield _a.call(readable_1);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-        return Buffer.concat(chunks);
-    });
-}
 /**
  * Gets user's page or info as JSON
  * @param username
  */
 router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //HACK: should be using Accept header instead of url ending in '.json'
     const isJson = req.params.username.endsWith(".json");
     const username = isJson
         ? req.params.username.slice(0, -5)
@@ -90,7 +63,7 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const buf = yield buffer(req);
+    const buf = yield (0, utils_1.buffer)(req);
     const rawBody = buf.toString("utf8");
     const activity = JSON.parse(rawBody);
     if (activity == null || activity.id == null) {
@@ -119,7 +92,7 @@ router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, 
             const localDomain = req.app.get("localDomain");
             const username = req.params.username;
             const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
-            const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString() + ".json");
+            const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
             (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                 .then(() => res.sendStatus(200))
                 .catch(() => {

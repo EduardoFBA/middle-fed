@@ -94,7 +94,7 @@ function createUser(name, domain, pubkey, prikey) {
             owner: `https://${domain}/u/${name}`,
             publicKeyPem: pubkey,
         },
-        privateKey: prikey, //TODO: change private key location to make it actually private
+        privateKey: prikey, //HACK: this privatekey should obviously be private
     };
 }
 exports.createUser = createUser;

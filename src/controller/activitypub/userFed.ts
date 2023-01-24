@@ -4,6 +4,7 @@ import { Readable } from "stream";
 import { getFollowersActivity } from "../../service/user.service";
 import {
   activityAlreadyExists,
+  buffer,
   getActorInfo,
   Query,
   remove,
@@ -18,19 +19,12 @@ export const userFedRouter = Router();
 const router = Router();
 userFedRouter.use("/u", router);
 
-async function buffer(readable: Readable) {
-  const chunks = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
 /**
  * Gets user's page or info as JSON
  * @param username
  */
 router.get("/:username", async (req: Request, res: Response) => {
+  //HACK: should be using Accept header instead of url ending in '.json'
   const isJson = req.params.username.endsWith(".json");
   const username = isJson
     ? req.params.username.slice(0, -5)
@@ -115,9 +109,7 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
       const username = req.params.username;
       const accept = createAcceptActivity(username, localDomain, activity);
 
-      const userInfo = await getActorInfo(
-        (<URL>activity.actor).toString() + ".json"
-      );
+      const userInfo = await getActorInfo((<URL>activity.actor).toString());
 
       sendSignedRequest(
         <URL>userInfo.inbox,

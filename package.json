@@ -16,6 +16,8 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
+    "@firebase/auth": "^0.21.1",
+    "@firebase/storage": "^0.10.1",
     "@types/node": "^18.11.9",
     "activitypub-core-types": "^0.0.344",
     "activitypub-http-signatures": "^2.0.1",

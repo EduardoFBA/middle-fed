@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -33,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userApiRouter = void 0;
-const crypto = __importStar(require("crypto"));
+const crypto_1 = require("crypto");
 const express_1 = require("express");
 const user_service_1 = require("../../service/user.service");
 const utils_1 = require("../../utils");
@@ -41,6 +18,15 @@ const utils_json_1 = require("../../utils-json");
 exports.userApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.userApiRouter.use("/u", router);
+/**
+ * Gets user's info
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+    const u = yield (0, utils_1.search)("actor", new utils_1.Query(`https://${domain}/u/${username}`));
+    res.send(u[0]);
+}));
 /**
  * Gets list of user's followers
  * @param account - account to filter (@username@domain)
@@ -50,9 +36,42 @@ router.get("/followers/:account", (req, res) => __awaiter(void 0, void 0, void 0
     res.send(yield (0, user_service_1.getFollowers)(username));
 }));
 /**
+ * Gets user's icon url
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/icon/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filename = "icon/" + req.params.account;
+    const readable = yield (0, utils_1.getFromStorage)(filename);
+    //HACK:
+    readable.on("data", (data) => __awaiter(void 0, void 0, void 0, function* () {
+        res
+            .status(200)
+            .send(`https://firebasestorage.googleapis.com/v0/b/middle-fed.appspot.com/o/${encodeURIComponent(data.metadata.name)}?alt=media&token=${data.metadata.metadata.firebaseStorageDownloadTokens}`);
+    }));
+}));
+/**
+ * Sends user's icon
+ * @param account - account to filter (@username@domain)
+ */
+router.post("/icon/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filename = "icon/" + req.params.account;
+    const base64 = req.body.file;
+    const base64Str = base64.includes(",") ? base64.split(",")[1] : base64;
+    const mime = (0, utils_1.getMimeByBase64)(base64Str);
+    const url = yield (0, utils_1.uploadToStorage)(base64Str, filename, mime);
+    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+    const user = ((yield (0, utils_1.search)("actor", new utils_1.Query(`https://${domain}/u/${username}`)))[0]);
+    const icon = user.icon;
+    icon.mediaType = mime.fullType;
+    icon.url = url;
+    (0, user_service_1.updateActor)(user);
+    res.sendStatus(200);
+}));
+/**
  * Creates a new actor for user
  */
 router.post("/", (req, res) => {
+    //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
     const account = req.body.account;
     if (account === undefined) {
         return res
@@ -60,7 +79,7 @@ router.post("/", (req, res) => {
             .send('Bad request. Please make sure "account" is a property in the POST body.');
     }
     // create keypair
-    crypto.generateKeyPair("rsa", {
+    (0, crypto_1.generateKeyPair)("rsa", {
         modulusLength: 4096,
         publicKeyEncoding: {
             type: "spki",
@@ -74,7 +93,7 @@ router.post("/", (req, res) => {
         const domain = req.app.get("localDomain");
         const userRecord = (0, utils_json_1.createUser)(account, domain, publicKey, privateKey);
         const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
-        const apikey = crypto.randomBytes(16).toString("hex");
+        const apikey = (0, crypto_1.randomBytes)(16).toString("hex");
         (0, utils_1.save)("user", userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
         res.status(200).json({ msg: "ok", apikey });

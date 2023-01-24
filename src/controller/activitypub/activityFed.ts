@@ -31,6 +31,8 @@ activityFedRouter.use("/activity", router);
 router.delete(
   "/:username/undo/:activityId/:activityType",
   async (req: Request, res: Response) => {
+    // FIXME: this should be in activityApi
+    // refactor this whole endpoint
     const localDomain = req.app.get("localDomain");
     const result = <AP.Activity[]>(
       await searchByField(
@@ -44,12 +46,12 @@ router.delete(
       res.send("nothin");
       return;
     }
-
     switch (result[0].type) {
       case AP.ActivityTypes.FOLLOW:
         const follow = <AP.Follow>result[0];
-        const objectActor = <AP.Person>follow.object;
-        const targetInfo = await getActorInfo(objectActor + ".json");
+        const objectActor = follow.object as any;
+        const actorUrl = objectActor.id ? objectActor.id : objectActor;
+        const targetInfo = await getActorInfo(actorUrl);
         const username = req.params.username;
 
         const undo = createUndoActivity(username, localDomain, follow);
@@ -106,7 +108,7 @@ router.post(
       return link.rel == "self";
     });
     const targetId = selfTarget[0].href;
-    const targetInfo = await getActorInfo(targetId + ".json");
+    const targetInfo = await getActorInfo(targetId);
 
     const username = req.params.username;
 

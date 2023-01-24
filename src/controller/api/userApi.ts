@@ -1,12 +1,31 @@
-import * as crypto from "crypto";
+import { AP } from "activitypub-core-types";
+import { generateKeyPair, randomBytes } from "crypto";
 import { Request, Response, Router } from "express";
-import { getFollowers } from "../../service/user.service";
-import { extractHandles, save } from "../../utils";
+import { getFollowers, updateActor } from "../../service/user.service";
+import {
+  extractHandles,
+  getFromStorage,
+  getMimeByBase64,
+  Query,
+  save,
+  search,
+  uploadToStorage,
+} from "../../utils";
 import { createUser, createWebfinger } from "../../utils-json";
 
 export const userApiRouter = Router();
 const router = Router();
 userApiRouter.use("/u", router);
+
+/**
+ * Gets user's info
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/:account", async (req: Request, res: Response) => {
+  const [username, domain] = extractHandles(req.params.account);
+  const u = await search("actor", new Query(`https://${domain}/u/${username}`));
+  res.send(u[0]);
+});
 
 /**
  * Gets list of user's followers
@@ -18,9 +37,58 @@ router.get("/followers/:account", async (req: Request, res: Response) => {
 });
 
 /**
+ * Gets user's icon url
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/icon/:account", async (req: Request, res: Response) => {
+  const filename = "icon/" + req.params.account;
+
+  const readable = await getFromStorage(filename);
+  //HACK:
+  readable.on("data", async (data) => {
+    res
+      .status(200)
+      .send(
+        `https://firebasestorage.googleapis.com/v0/b/middle-fed.appspot.com/o/${encodeURIComponent(
+          data.metadata.name
+        )}?alt=media&token=${
+          data.metadata.metadata.firebaseStorageDownloadTokens
+        }`
+      );
+  });
+});
+
+/**
+ * Sends user's icon
+ * @param account - account to filter (@username@domain)
+ */
+router.post("/icon/:account", async (req: Request, res: Response) => {
+  const filename = "icon/" + req.params.account;
+
+  const base64 = req.body.file;
+  const base64Str = base64.includes(",") ? base64.split(",")[1] : base64;
+  const mime = getMimeByBase64(base64Str);
+  const url = await uploadToStorage(base64Str, filename, mime);
+
+  const [username, domain] = extractHandles(req.params.account);
+  const user = <AP.Person>(
+    (await search("actor", new Query(`https://${domain}/u/${username}`)))[0]
+  );
+
+  const icon = user.icon as any;
+  icon.mediaType = mime.fullType;
+  icon.url = url;
+
+  updateActor(user);
+
+  res.sendStatus(200);
+});
+
+/**
  * Creates a new actor for user
  */
 router.post("/", (req: Request, res: Response) => {
+  //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
   const account = req.body.account;
   if (account === undefined) {
     return res
@@ -30,7 +98,7 @@ router.post("/", (req: Request, res: Response) => {
       );
   }
   // create keypair
-  crypto.generateKeyPair(
+  generateKeyPair(
     "rsa",
     {
       modulusLength: 4096,
@@ -47,7 +115,7 @@ router.post("/", (req: Request, res: Response) => {
       const domain = req.app.get("localDomain");
       const userRecord = createUser(account, domain, publicKey, privateKey);
       const webfingerRecord = createWebfinger(account, domain);
-      const apikey = crypto.randomBytes(16).toString("hex");
+      const apikey = randomBytes(16).toString("hex");
       save("user", userRecord);
       save("webfinger", webfingerRecord);
       res.status(200).json({ msg: "ok", apikey });
