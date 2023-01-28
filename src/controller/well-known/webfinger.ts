@@ -5,7 +5,8 @@ export const wellKnownRouter = Router();
 
 wellKnownRouter.get("/webfinger", async (req: Request, res: Response) => {
   if (req.query.resource) {
-    res.send(await getWebfinger(req.query.resource as string));
+    const webfinger = await getWebfinger(req.query.resource as string);
+    res.send(webfinger);
     return;
   }
 

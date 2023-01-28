@@ -222,10 +222,15 @@ export async function getActorInfo(userId: string): Promise<AP.Actor> {
 
 export async function getWebfinger(resource: string) {
   const [username, domain] = extractHandles(resource);
-  const promise = await fetch(
-    `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`
+
+  const promise = await searchByField(
+    "webfinger",
+    "subject",
+    `acct:${username}@${domain}`
   );
-  return await promise.json();
+
+  if (promise.length) return promise[0];
+  else return {};
 }
 
 export function extractHandles(resource: string): string[] {

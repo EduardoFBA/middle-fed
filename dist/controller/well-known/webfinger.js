@@ -15,7 +15,8 @@ const utils_1 = require("../../utils");
 exports.wellKnownRouter = (0, express_1.Router)();
 exports.wellKnownRouter.get("/webfinger", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (req.query.resource) {
-        res.send(yield (0, utils_1.getWebfinger)(req.query.resource));
+        const webfinger = yield (0, utils_1.getWebfinger)(req.query.resource);
+        res.send(webfinger);
         return;
     }
     res.send({ error: "No account provided" });
