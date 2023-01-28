@@ -28,7 +28,7 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
     const username = isJson
         ? req.params.username.slice(0, -5)
         : req.params.username;
-    const result = yield (0, utils_1.searchByField)("actor", "preferredUsername", username);
+    const result = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "preferredUsername", username);
     if (!result.length)
         res.send({ error: "no account found" });
     else {

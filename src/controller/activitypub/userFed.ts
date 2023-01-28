@@ -20,7 +20,11 @@ router.get("/:username", async (req: Request, res: Response) => {
     ? req.params.username.slice(0, -5)
     : req.params.username;
 
-  const result = await searchByField("actor", "preferredUsername", username);
+  const result = await searchByField(
+    AP.ActorTypes.PERSON,
+    "preferredUsername",
+    username
+  );
   if (!result.length) res.send({ error: "no account found" });
   else {
     if (isJson) {
