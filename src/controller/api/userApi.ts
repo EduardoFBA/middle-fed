@@ -9,6 +9,7 @@ import {
   Query,
   save,
   search,
+  searchByField,
   uploadToStorage,
 } from "../../utils";
 import { createUser, createWebfinger } from "../../utils-json";
@@ -23,7 +24,11 @@ userApiRouter.use("/u", router);
  */
 router.get("/:account", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
-  const u = await search("actor", new Query(`https://${domain}/u/${username}`));
+  const u = await searchByField(
+    AP.ActorTypes.PERSON,
+    "id",
+    `https://${domain}/u/${username}`
+  );
   res.send(u[0]);
 });
 

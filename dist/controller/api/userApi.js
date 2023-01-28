@@ -25,7 +25,7 @@ exports.userApiRouter.use("/u", router);
  */
 router.get("/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
-    const u = yield (0, utils_1.search)("actor", new utils_1.Query(`https://${domain}/u/${username}`));
+    const u = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "id", `https://${domain}/u/${username}`);
     res.send(u[0]);
 }));
 /**
