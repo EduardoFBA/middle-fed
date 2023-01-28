@@ -89,6 +89,7 @@ function createUser(name, domain, pubkey, prikey) {
         following: `https://${domain}/u/${name}/following`,
         inbox: `https://${domain}/u/${name}/inbox`,
         outbox: `https://${domain}/u/${name}/outbox`,
+        endpoints: { sharedInbox: `https://${domain}/public/inbox` },
         publicKey: {
             id: `https://${domain}/u/${name}#main-key`,
             owner: `https://${domain}/u/${name}`,

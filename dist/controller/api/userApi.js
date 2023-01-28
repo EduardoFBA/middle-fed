@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userApiRouter = void 0;
+const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 const express_1 = require("express");
 const user_service_1 = require("../../service/user.service");
@@ -94,7 +95,7 @@ router.post("/", (req, res) => {
         const userRecord = (0, utils_json_1.createUser)(account, domain, publicKey, privateKey);
         const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
         const apikey = (0, crypto_1.randomBytes)(16).toString("hex");
-        (0, utils_1.save)("user", userRecord);
+        (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
         res.status(200).json({ msg: "ok", apikey });
     });

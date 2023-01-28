@@ -82,8 +82,11 @@ export async function uploadToStorage(
   )}?alt=media&token=${uuid}`;
 }
 
-export async function list(collection: string): Promise<any[]> {
-  const collectionRef = db.collection(collection);
+export async function list(
+  collection: string,
+  limit: number = 100
+): Promise<any[]> {
+  const collectionRef = db.collection(collection).limit(limit);
   const snapshot = await collectionRef.get();
 
   const docs = [];

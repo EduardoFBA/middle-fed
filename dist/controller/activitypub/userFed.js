@@ -14,7 +14,6 @@ const activitypub_core_types_1 = require("activitypub-core-types");
 const express_1 = require("express");
 const user_service_1 = require("../../service/user.service");
 const utils_1 = require("../../utils");
-const utils_json_1 = require("../../utils-json");
 exports.userFedRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.userFedRouter.use("/u", router);
@@ -24,7 +23,8 @@ exports.userFedRouter.use("/u", router);
  */
 router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //HACK: should be using Accept header instead of url ending in '.json'
-    const isJson = req.params.username.endsWith(".json");
+    const isJson = req.headers.accept ==
+        "application/ld+json; profile='https://www.w3.org/ns/activitystreams'";
     const username = isJson
         ? req.params.username.slice(0, -5)
         : req.params.username;
@@ -63,58 +63,6 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const buf = yield (0, utils_1.buffer)(req);
-    const rawBody = buf.toString("utf8");
-    const activity = JSON.parse(rawBody);
-    if (activity == null || activity.id == null) {
-        res.sendStatus(400);
-        return;
-    }
-    switch (activity.type) {
-        case activitypub_core_types_1.AP.ActivityTypes.DELETE:
-            const del = activity;
-            if (del.object) {
-                if (del.actor === del.object) {
-                    (0, utils_1.remove)("actor", new utils_1.Query(del.actor.toString()));
-                }
-                else if (del.object.id != null) {
-                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, new utils_1.Query(del.object.id.toString()));
-                }
-            }
-            res.sendStatus(200);
-            break;
-        case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-            if (yield (0, utils_1.activityAlreadyExists)(activity)) {
-                res.status(409).send("Activity already exists");
-                return;
-            }
-            yield (0, utils_1.save)(activity.type.toString(), activity);
-            const localDomain = req.app.get("localDomain");
-            const username = req.params.username;
-            const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
-            const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
-            (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
-                .then(() => res.sendStatus(200))
-                .catch(() => {
-                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
-                res.sendStatus(500);
-            });
-            break;
-        case activitypub_core_types_1.AP.ActivityTypes.UNDO:
-            const undoActivity = activity;
-            if (undoActivity.actor == null || undoActivity.object == null) {
-                res.status(400).send("Activity missing required fields");
-                return;
-            }
-            (0, utils_1.removeActivity)(undoActivity).then(() => res.sendStatus(200));
-            break;
-        default:
-            if (yield (0, utils_1.activityAlreadyExists)(activity)) {
-                res.status(409).send("Activity already exists");
-                return;
-            }
-            (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
-            break;
-    }
+    (0, user_service_1.inbox)(req, res);
 }));
 //# sourceMappingURL=userFed.js.map

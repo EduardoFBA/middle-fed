@@ -91,9 +91,9 @@ function uploadToStorage(base64Str, filename, mime) {
     });
 }
 exports.uploadToStorage = uploadToStorage;
-function list(collection) {
+function list(collection, limit = 100) {
     return __awaiter(this, void 0, void 0, function* () {
-        const collectionRef = db.collection(collection);
+        const collectionRef = db.collection(collection).limit(limit);
         const snapshot = yield collectionRef.get();
         const docs = [];
         snapshot.forEach((doc) => {

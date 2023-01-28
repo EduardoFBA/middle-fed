@@ -28,7 +28,7 @@ router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, fun
     res.send(yield (0, timeline_service_1.getNotes)(userQuery));
 }));
 /**
- * gets user's following's posts
+ * Gets user's following's posts
  * @param account - account to filter (@username@domain)
  */
 router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -41,5 +41,13 @@ router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0
         queries.push(query);
     }
     res.send(yield (0, timeline_service_1.getNotes)(...queries));
+}));
+/**
+ * Gets public posts
+ */
+router.get("/public", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const query = new utils_1.Query(["https://www.w3.org/ns/activitystreams#Public"]);
+    query.fieldPath = "to";
+    res.send(yield (0, timeline_service_1.getNotes)(query));
 }));
 //# sourceMappingURL=timelineApi.js.map

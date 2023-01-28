@@ -116,7 +116,7 @@ router.post("/", (req: Request, res: Response) => {
       const userRecord = createUser(account, domain, publicKey, privateKey);
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = randomBytes(16).toString("hex");
-      save("user", userRecord);
+      save(AP.ActorTypes.PERSON, userRecord);
       save("webfinger", webfingerRecord);
       res.status(200).json({ msg: "ok", apikey });
     }

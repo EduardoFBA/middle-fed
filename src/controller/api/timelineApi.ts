@@ -21,7 +21,7 @@ router.get("/user/:account", async (req: Request, res: Response) => {
 });
 
 /**
- * gets user's following's posts
+ * Gets user's following's posts
  * @param account - account to filter (@username@domain)
  */
 router.get("/following/:account", async (req: Request, res: Response) => {
@@ -36,4 +36,13 @@ router.get("/following/:account", async (req: Request, res: Response) => {
   }
 
   res.send(await getNotes(...queries));
+});
+
+/**
+ * Gets public posts
+ */
+router.get("/public", async (req: Request, res: Response) => {
+  const query = new Query(["https://www.w3.org/ns/activitystreams#Public"]);
+  query.fieldPath = "to";
+  res.send(await getNotes(query));
 });
