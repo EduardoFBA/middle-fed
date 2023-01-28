@@ -12,27 +12,24 @@ userFedRouter.use("/u", router);
  * @param username
  */
 router.get("/:username", async (req: Request, res: Response) => {
-  //HACK: should be using Accept header instead of url ending in '.json'
   const isJson =
-    req.headers.accept ==
-    "application/ld+json; profile='https://www.w3.org/ns/activitystreams'";
-  const username = isJson
-    ? req.params.username.slice(0, -5)
-    : req.params.username;
+    req.headers.accept?.includes("application/ld+json") ||
+    req.headers["content-type"]?.includes("application/ld+json");
+
+  console.log(`${req.params.username}@${req.app.get("localDomain")}`);
 
   const result = await searchByField(
     AP.ActorTypes.PERSON,
-    "preferredUsername",
-    username
+    "account",
+    `${req.params.username}@${req.app.get("localDomain")}`
   );
   if (!result.length) res.send({ error: "no account found" });
   else {
     if (isJson) {
       res.send(result[0]);
     } else {
-      res.sendFile("user.html", { root: "src/view" }, (err) => {
-        if (err) res.send(err);
-      });
+      // TODO should be user's redirect uri
+      // res.redirect(result[0].url);
     }
   }
 });

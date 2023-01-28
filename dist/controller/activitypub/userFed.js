@@ -22,13 +22,11 @@ exports.userFedRouter.use("/u", router);
  * @param username
  */
 router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    //HACK: should be using Accept header instead of url ending in '.json'
-    const isJson = req.headers.accept ==
-        "application/ld+json; profile='https://www.w3.org/ns/activitystreams'";
-    const username = isJson
-        ? req.params.username.slice(0, -5)
-        : req.params.username;
-    const result = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "preferredUsername", username);
+    var _a, _b;
+    const isJson = ((_a = req.headers.accept) === null || _a === void 0 ? void 0 : _a.includes("application/ld+json")) ||
+        ((_b = req.headers["content-type"]) === null || _b === void 0 ? void 0 : _b.includes("application/ld+json"));
+    console.log(`${req.params.username}@${req.app.get("localDomain")}`);
+    const result = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${req.params.username}@${req.app.get("localDomain")}`);
     if (!result.length)
         res.send({ error: "no account found" });
     else {
@@ -36,10 +34,8 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
             res.send(result[0]);
         }
         else {
-            res.sendFile("user.html", { root: "src/view" }, (err) => {
-                if (err)
-                    res.send(err);
-            });
+            // TODO should be user's redirect uri
+            // res.redirect(result[0].url);
         }
     }
 }));
