@@ -98,6 +98,7 @@ export async function inbox(req: Request, res: Response) {
       )
         .then(() => res.sendStatus(200))
         .catch((e) => {
+          console.log(e);
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
           res.status(500).send(e);
         });

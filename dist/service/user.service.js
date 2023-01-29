@@ -79,6 +79,7 @@ function inbox(req, res) {
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                     .then(() => res.sendStatus(200))
                     .catch((e) => {
+                    console.log(e);
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
                     res.status(500).send(e);
                 });

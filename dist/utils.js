@@ -264,7 +264,6 @@ function sendSignedRequest(endpoint, method, object, domain, username) {
             date: new Date().toUTCString(),
             digest: `SHA-256=${(0, crypto_1.createHash)("sha256").update(activity).digest("base64")}`,
         };
-        console.log(actorInfo);
         // Generate the signature header
         const signature = sign(endpoint, method, requestHeaders, actorInfo.publicKey.id, actorInfo.privateKey);
         return yield (0, node_fetch_1.default)(endpoint, {
