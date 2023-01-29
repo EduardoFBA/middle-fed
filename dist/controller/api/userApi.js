@@ -62,7 +62,6 @@ router.post("/icon/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
     const url = yield (0, utils_1.uploadToStorage)(base64Str, filename, mime);
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
     const user = ((yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${username}@${domain}`))[0]);
-    console.log([username, domain], url);
     const icon = user.icon;
     icon.mediaType = mime.fullType;
     icon.url = url;

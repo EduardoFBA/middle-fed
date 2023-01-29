@@ -47,7 +47,8 @@ function inbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
-        const activity = JSON.parse(rawBody);
+        // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+        const activity = req.body;
         if (activity == null || activity.id == null) {
             res.sendStatus(400);
             return;
@@ -77,9 +78,9 @@ function inbox(req, res) {
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                     .then(() => res.sendStatus(200))
-                    .catch(() => {
+                    .catch((e) => {
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
-                    res.sendStatus(500);
+                    res.status(500).send(e);
                 });
                 break;
             case activitypub_core_types_1.AP.ActivityTypes.UNDO:

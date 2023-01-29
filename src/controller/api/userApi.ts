@@ -85,7 +85,7 @@ router.post("/icon/:account", async (req: Request, res: Response) => {
       )
     )[0]
   );
-  console.log([username, domain], url);
+
   const icon = user.icon as any;
   icon.mediaType = mime.fullType;
   icon.url = url;

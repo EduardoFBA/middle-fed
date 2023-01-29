@@ -25,7 +25,6 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
     var _a, _b;
     const isJson = ((_a = req.headers.accept) === null || _a === void 0 ? void 0 : _a.includes("application/ld+json")) ||
         ((_b = req.headers["content-type"]) === null || _b === void 0 ? void 0 : _b.includes("application/ld+json"));
-    console.log(`${req.params.username}@${req.app.get("localDomain")}`);
     const result = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${req.params.username}@${req.app.get("localDomain")}`);
     if (!result.length)
         res.send({ error: "no account found" });

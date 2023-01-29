@@ -50,7 +50,8 @@ export async function getFollowersActivity(
 export async function inbox(req: Request, res: Response) {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  const activity: AP.Activity = req.body;
 
   if (activity == null || activity.id == null) {
     res.sendStatus(400);
@@ -96,9 +97,9 @@ export async function inbox(req: Request, res: Response) {
         username
       )
         .then(() => res.sendStatus(200))
-        .catch(() => {
+        .catch((e) => {
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
-          res.sendStatus(500);
+          res.status(500).send(e);
         });
       break;
 

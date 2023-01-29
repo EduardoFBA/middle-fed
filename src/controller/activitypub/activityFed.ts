@@ -154,7 +154,6 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
   );
 
   for (let inbox of addressedTo) {
-    console.log("inbox", inbox);
     const response = await sendSignedRequest(
       new URL(inbox),
       "POST",
@@ -164,7 +163,6 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
     );
 
     if (response.ok) {
-      console.log("saving create note", create);
       await save(AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)));
     } else {
       console.log("error", await response.text());

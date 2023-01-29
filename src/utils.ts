@@ -259,7 +259,13 @@ export async function sendSignedRequest(
   domain: string,
   username: string
 ): Promise<Response> {
-  const actorInfo = await getActorInfo(`https://${domain}/u/${username}.json`);
+  const actorInfo = (
+    await searchByField(
+      AP.ActorTypes.PERSON,
+      "account",
+      `${username}@${domain}`
+    )
+  )[0];
 
   const activity = JSON.stringify(object);
   const requestHeaders = {

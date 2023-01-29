@@ -257,13 +257,14 @@ function buffer(readable) {
 exports.buffer = buffer;
 function sendSignedRequest(endpoint, method, object, domain, username) {
     return __awaiter(this, void 0, void 0, function* () {
-        const actorInfo = yield getActorInfo(`https://${domain}/u/${username}.json`);
+        const actorInfo = (yield searchByField(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${username}@${domain}`))[0];
         const activity = JSON.stringify(object);
         const requestHeaders = {
             host: endpoint.hostname,
             date: new Date().toUTCString(),
             digest: `SHA-256=${(0, crypto_1.createHash)("sha256").update(activity).digest("base64")}`,
         };
+        console.log(actorInfo);
         // Generate the signature header
         const signature = sign(endpoint, method, requestHeaders, actorInfo.publicKey.id, actorInfo.privateKey);
         return yield (0, node_fetch_1.default)(endpoint, {

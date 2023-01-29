@@ -16,8 +16,6 @@ router.get("/:username", async (req: Request, res: Response) => {
     req.headers.accept?.includes("application/ld+json") ||
     req.headers["content-type"]?.includes("application/ld+json");
 
-  console.log(`${req.params.username}@${req.app.get("localDomain")}`);
-
   const result = await searchByField(
     AP.ActorTypes.PERSON,
     "account",

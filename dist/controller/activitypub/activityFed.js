@@ -101,7 +101,6 @@ router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, v
     const note = (0, utils_json_1.createNoteObject)(name, content, username, localDomain);
     const create = (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
     for (let inbox of addressedTo) {
-        console.log("inbox", inbox);
         const response = yield (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, localDomain, req.params.username);
         if (response.ok) {
             console.log("saving create note", create);
