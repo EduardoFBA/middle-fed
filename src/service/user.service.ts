@@ -96,7 +96,10 @@ export async function inbox(req: Request, res: Response) {
         localDomain,
         username
       )
-        .then(() => res.sendStatus(200))
+        .then((response) => {
+          console.log(response);
+          res.sendStatus(200);
+        })
         .catch((e) => {
           console.log(e);
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));

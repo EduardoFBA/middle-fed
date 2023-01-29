@@ -77,7 +77,10 @@ function inbox(req, res) {
                 const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
-                    .then(() => res.sendStatus(200))
+                    .then((response) => {
+                    console.log(response);
+                    res.sendStatus(200);
+                })
                     .catch((e) => {
                     console.log(e);
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
