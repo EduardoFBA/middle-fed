@@ -90,6 +90,11 @@ function createUser(name, domain, pubkey, prikey) {
         inbox: `https://${domain}/u/${name}/inbox`,
         outbox: `https://${domain}/u/${name}/outbox`,
         endpoints: { sharedInbox: `https://${domain}/public/inbox` },
+        icon: {
+            type: "Image",
+            mediaType: "image/jpg",
+            url: "https://firebasestorage.googleapis.com/v0/b/middle-fed.appspot.com/o/icon%2Fplaceholder.jpg?alt=media&token=db101005-b1ff-422c-8424-042d8129a8ed",
+        },
         publicKey: {
             id: `https://${domain}/u/${name}#main-key`,
             owner: `https://${domain}/u/${name}`,

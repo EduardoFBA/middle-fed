@@ -15,8 +15,8 @@ const utils_1 = require("../utils");
 const utils_json_1 = require("../utils-json");
 function updateActor(actor) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, utils_1.update)("actor", actor, actor.id.toString());
-        return "";
+        yield (0, utils_1.update)(activitypub_core_types_1.AP.ActorTypes.PERSON, actor, actor.id.toString());
+        return;
     });
 }
 exports.updateActor = updateActor;
@@ -39,7 +39,7 @@ function getFollowers(username) {
 exports.getFollowers = getFollowers;
 function getFollowersActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${username}`);
+        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activitypub_core_types_1.AP.ActorTypes.PERSON, `https://middle-fed.onrender.com/u/${username}`);
     });
 }
 exports.getFollowersActivity = getFollowersActivity;
@@ -57,7 +57,7 @@ function inbox(req, res) {
                 const del = activity;
                 if (del.object) {
                     if (del.actor === del.object) {
-                        (0, utils_1.remove)("actor", new utils_1.Query(del.actor.toString()));
+                        (0, utils_1.remove)(activitypub_core_types_1.AP.ActorTypes.PERSON, new utils_1.Query(del.actor.toString()));
                     }
                     else if (del.object.id != null) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, new utils_1.Query(del.object.id.toString()));

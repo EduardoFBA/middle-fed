@@ -14,9 +14,9 @@ import {
 } from "../utils";
 import { createAcceptActivity } from "../utils-json";
 
-export async function updateActor(actor: AP.Person): Promise<string> {
-  await update("actor", actor, actor.id.toString());
-  return "";
+export async function updateActor(actor: AP.Person): Promise<void> {
+  await update(AP.ActorTypes.PERSON, actor, actor.id.toString());
+  return;
 }
 
 export async function getFollowers(
@@ -42,7 +42,7 @@ export async function getFollowersActivity(
 ): Promise<AP.Follow[]> {
   return await searchByField(
     AP.ActivityTypes.FOLLOW,
-    "actor",
+    AP.ActorTypes.PERSON,
     `https://middle-fed.onrender.com/u/${username}`
   );
 }
@@ -63,7 +63,7 @@ export async function inbox(req: Request, res: Response) {
 
       if (del.object) {
         if (del.actor === del.object) {
-          remove("actor", new Query(del.actor.toString()));
+          remove(AP.ActorTypes.PERSON, new Query(del.actor.toString()));
         } else if ((del.object as any).id != null) {
           remove(
             AP.ActivityTypes.CREATE,

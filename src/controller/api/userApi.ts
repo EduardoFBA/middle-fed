@@ -77,9 +77,15 @@ router.post("/icon/:account", async (req: Request, res: Response) => {
 
   const [username, domain] = extractHandles(req.params.account);
   const user = <AP.Person>(
-    (await search("actor", new Query(`https://${domain}/u/${username}`)))[0]
+    (
+      await searchByField(
+        AP.ActorTypes.PERSON,
+        "account",
+        `${username}@${domain}`
+      )
+    )[0]
   );
-
+  console.log([username, domain], url);
   const icon = user.icon as any;
   icon.mediaType = mime.fullType;
   icon.url = url;
