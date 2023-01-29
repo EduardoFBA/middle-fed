@@ -58,7 +58,6 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("inbox");
     (0, user_service_1.inbox)(req, res);
 }));
 //# sourceMappingURL=userFed.js.map
