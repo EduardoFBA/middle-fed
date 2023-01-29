@@ -60,5 +60,6 @@ router.get("/:username/following", async (req: Request, res: Response) => {
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", async (req: Request, res: Response) => {
+  console.log("inbox");
   inbox(req, res);
 });
