@@ -20,7 +20,7 @@ function getNotes(...queries) {
         return creates.map((create) => {
             const note = create.object;
             note.content = (0, utils_1.stripHtml)(note.content);
-            return note;
+            return create;
         });
     });
 }

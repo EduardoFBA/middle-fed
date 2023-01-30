@@ -96,7 +96,6 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
         const apikey = (0, crypto_1.randomBytes)(16).toString("hex");
         yield (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, userRecord);
-        console.log(userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
         res.status(200).json({ msg: "ok", apikey });
     }));

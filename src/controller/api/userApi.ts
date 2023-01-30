@@ -128,7 +128,6 @@ router.post("/", async (req: Request, res: Response) => {
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = randomBytes(16).toString("hex");
       await save(AP.ActorTypes.PERSON, userRecord);
-      console.log(userRecord);
       save("webfinger", webfingerRecord);
       res.status(200).json({ msg: "ok", apikey });
     }

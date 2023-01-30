@@ -14,6 +14,6 @@ export async function getNotes(...queries: Query[]) {
   return creates.map((create) => {
     const note = create.object as AP.Note;
     note.content = stripHtml(note.content);
-    return note;
+    return create;
   });
 }

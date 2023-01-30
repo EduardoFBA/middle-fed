@@ -27,7 +27,7 @@ function getFollowers(username) {
         const follows = yield getFollowersActivity(username);
         for (const follow of follows) {
             try {
-                const actorInfo = yield (0, utils_1.getActorInfo)(follow.object.toString());
+                const actorInfo = yield (0, utils_1.getActorInfo)(follow.actor.toString());
                 actors.push(actorInfo);
             }
             catch (e) {
@@ -40,7 +40,7 @@ function getFollowers(username) {
 exports.getFollowers = getFollowers;
 function getFollowersActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activitypub_core_types_1.AP.ActorTypes.PERSON, `https://middle-fed.onrender.com/u/${username}`);
+        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object", `https://middle-fed.onrender.com/u/${username}`);
     });
 }
 exports.getFollowersActivity = getFollowersActivity;
@@ -53,6 +53,9 @@ function inbox(req, res) {
             res.sendStatus(400);
             return;
         }
+        if (activity.actor.id != null) {
+            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor.id);
+        }
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
                 console.log("accept", activity);
@@ -60,6 +63,7 @@ function inbox(req, res) {
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
+                console.log(del);
                 if (del.object) {
                     if (del.actor === del.object) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActorTypes.PERSON, new utils_1.Query(del.actor.toString()));
@@ -75,6 +79,7 @@ function inbox(req, res) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
+                activity.published = new Date();
                 yield (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity);
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
@@ -98,14 +103,15 @@ function inbox(req, res) {
                     return;
                 }
                 (0, utils_1.removeActivity)(undoActivity).then(() => res.sendStatus(200));
-                break;
+                return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
+                console.log(activity.type, activity);
                 (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
-                break;
+                return;
         }
         res.sendStatus(500);
     });

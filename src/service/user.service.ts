@@ -29,7 +29,7 @@ export async function getFollowers(
 
   for (const follow of follows) {
     try {
-      const actorInfo = await getActorInfo(follow.object.toString());
+      const actorInfo = await getActorInfo(follow.actor.toString());
       actors.push(actorInfo as AP.Person);
     } catch (e) {
       console.log(e);
@@ -44,7 +44,7 @@ export async function getFollowersActivity(
 ): Promise<AP.Follow[]> {
   return await searchByField(
     AP.ActivityTypes.FOLLOW,
-    AP.ActorTypes.PERSON,
+    "object",
     `https://middle-fed.onrender.com/u/${username}`
   );
 }
@@ -59,13 +59,19 @@ export async function inbox(req: Request, res: Response) {
     return;
   }
 
+  if ((activity.actor as any).id != null) {
+    activity.actor = await getActorInfo((activity.actor as any).id);
+  }
+
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
       console.log("accept", activity);
       res.sendStatus(200);
       return;
+
     case AP.ActivityTypes.DELETE:
       const del = <AP.Delete>activity;
+      console.log(del);
 
       if (del.object) {
         if (del.actor === del.object) {
@@ -85,6 +91,9 @@ export async function inbox(req: Request, res: Response) {
         res.status(409).send("Activity already exists");
         return;
       }
+
+      activity.published = new Date();
+
       await save(AP.ActivityTypes.FOLLOW, activity);
 
       const localDomain = req.app.get("localDomain");
@@ -120,7 +129,7 @@ export async function inbox(req: Request, res: Response) {
 
       removeActivity(undoActivity).then(() => res.sendStatus(200));
 
-      break;
+      return;
 
     default:
       if (await activityAlreadyExists(activity)) {
@@ -128,9 +137,10 @@ export async function inbox(req: Request, res: Response) {
         return;
       }
 
+      console.log(activity.type, activity);
       save(activity.type.toString(), activity).then(() => res.sendStatus(200));
 
-      break;
+      return;
   }
   res.sendStatus(500);
 }
