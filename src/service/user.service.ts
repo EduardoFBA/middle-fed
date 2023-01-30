@@ -52,15 +52,15 @@ export async function getFollowersActivity(
 export async function inbox(req: Request, res: Response) {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  const activity = req.body;
 
   if (activity == null || activity.id == null) {
     res.sendStatus(400);
     return;
   }
-
-  if ((activity.actor as any).id != null) {
-    activity.actor = await getActorInfo((activity.actor as any).id);
+  if ((activity.actor as any).id == null) {
+    activity.actor = await getActorInfo(activity.actor);
   }
 
   switch (activity.type) {

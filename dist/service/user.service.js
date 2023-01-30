@@ -48,13 +48,14 @@ function inbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
-        const activity = JSON.parse(rawBody);
+        // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+        const activity = req.body;
         if (activity == null || activity.id == null) {
             res.sendStatus(400);
             return;
         }
-        if (activity.actor.id != null) {
-            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor.id);
+        if (activity.actor.id == null) {
+            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor);
         }
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
