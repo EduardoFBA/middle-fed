@@ -25,6 +25,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
   const targetInfo = await getActorInfo(targetId);
 
   const follow = createFollowActivity(username, domain, new URL(targetId));
+
   const response = await sendSignedRequest(
     <URL>targetInfo.inbox,
     "POST",

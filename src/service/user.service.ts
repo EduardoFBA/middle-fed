@@ -52,9 +52,7 @@ export async function getFollowersActivity(
 export async function inbox(req: Request, res: Response) {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-  const activity = req.body;
-  console.log(activity);
+  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
 
   if (activity == null || activity.id == null) {
     res.sendStatus(400);
@@ -62,6 +60,10 @@ export async function inbox(req: Request, res: Response) {
   }
 
   switch (activity.type) {
+    case AP.ActivityTypes.ACCEPT:
+      console.log("accept", activity);
+      res.sendStatus(200);
+      return;
     case AP.ActivityTypes.DELETE:
       const del = <AP.Delete>activity;
 
@@ -83,10 +85,7 @@ export async function inbox(req: Request, res: Response) {
         res.status(409).send("Activity already exists");
         return;
       }
-      console.log(activity.type.toString());
-      console.log("993");
-      await save("activitytype", { wq: 68979 });
-      console.log("994");
+      await save(AP.ActivityTypes.FOLLOW, activity);
 
       const localDomain = req.app.get("localDomain");
       const username = req.params.username;
@@ -94,23 +93,22 @@ export async function inbox(req: Request, res: Response) {
 
       const userInfo = await getActorInfo((<URL>activity.actor).toString());
 
-      // console.log(userInfo);
-      // sendSignedRequest(
-      //   <URL>userInfo.inbox,
-      //   "POST",
-      //   accept,
-      //   localDomain,
-      //   username
-      // )
-      //   .then((response) => {
-      //     console.log(response);
-      //     res.sendStatus(200);
-      //   })
-      //   .catch((e) => {
-      //     console.log(e);
-      //     remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
-      //     res.status(500).send(e);
-      //   });
+      sendSignedRequest(
+        <URL>userInfo.inbox,
+        "POST",
+        accept,
+        localDomain,
+        username
+      )
+        .then((response) => {
+          console.log(response);
+          res.sendStatus(200);
+        })
+        .catch((e) => {
+          console.log(e);
+          remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
+          res.status(500).send(e);
+        });
       break;
 
     case AP.ActivityTypes.UNDO:

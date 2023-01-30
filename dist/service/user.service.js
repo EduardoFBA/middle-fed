@@ -48,14 +48,16 @@ function inbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
-        // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-        const activity = req.body;
-        console.log(activity);
+        const activity = JSON.parse(rawBody);
         if (activity == null || activity.id == null) {
             res.sendStatus(400);
             return;
         }
         switch (activity.type) {
+            case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
+                console.log("accept", activity);
+                res.sendStatus(200);
+                return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
                 if (del.object) {
@@ -73,31 +75,21 @@ function inbox(req, res) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
-                console.log(activity.type.toString());
-                console.log("993");
-                yield (0, utils_1.save)("activitytype", { wq: 68979 });
-                console.log("994");
+                yield (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity);
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
                 const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
-                // console.log(userInfo);
-                // sendSignedRequest(
-                //   <URL>userInfo.inbox,
-                //   "POST",
-                //   accept,
-                //   localDomain,
-                //   username
-                // )
-                //   .then((response) => {
-                //     console.log(response);
-                //     res.sendStatus(200);
-                //   })
-                //   .catch((e) => {
-                //     console.log(e);
-                //     remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
-                //     res.status(500).send(e);
-                //   });
+                (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
+                    .then((response) => {
+                    console.log(response);
+                    res.sendStatus(200);
+                })
+                    .catch((e) => {
+                    console.log(e);
+                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
+                    res.status(500).send(e);
+                });
                 break;
             case activitypub_core_types_1.AP.ActivityTypes.UNDO:
                 const undoActivity = activity;

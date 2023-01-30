@@ -17,7 +17,9 @@ userFedRouter.use("/u", router);
  */
 router.get("/:username", async (req: Request, res: Response) => {
   const isJson =
+    req.headers.accept?.includes("application/activity+json") ||
     req.headers.accept?.includes("application/ld+json") ||
+    req.headers["content-type"]?.includes("application/activity+json") ||
     req.headers["content-type"]?.includes("application/ld+json");
 
   const result = await searchByField(
@@ -32,6 +34,7 @@ router.get("/:username", async (req: Request, res: Response) => {
     } else {
       // TODO should be user's redirect uri
       // res.redirect(result[0].url);
+      res.sendStatus(404);
     }
   }
 });
@@ -64,7 +67,6 @@ router.get("/:username/following", async (req: Request, res: Response) => {
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", async (req: Request, res: Response) => {
-  console.log("sdoiioois");
   inbox(req, res);
 });
 

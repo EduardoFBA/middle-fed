@@ -22,9 +22,11 @@ exports.userFedRouter.use("/u", router);
  * @param username
  */
 router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    const isJson = ((_a = req.headers.accept) === null || _a === void 0 ? void 0 : _a.includes("application/ld+json")) ||
-        ((_b = req.headers["content-type"]) === null || _b === void 0 ? void 0 : _b.includes("application/ld+json"));
+    var _a, _b, _c, _d;
+    const isJson = ((_a = req.headers.accept) === null || _a === void 0 ? void 0 : _a.includes("application/activity+json")) ||
+        ((_b = req.headers.accept) === null || _b === void 0 ? void 0 : _b.includes("application/ld+json")) ||
+        ((_c = req.headers["content-type"]) === null || _c === void 0 ? void 0 : _c.includes("application/activity+json")) ||
+        ((_d = req.headers["content-type"]) === null || _d === void 0 ? void 0 : _d.includes("application/ld+json"));
     const result = yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${req.params.username}@${req.app.get("localDomain")}`);
     if (!result.length)
         res.send({ error: "no account found" });
@@ -35,6 +37,7 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
         else {
             // TODO should be user's redirect uri
             // res.redirect(result[0].url);
+            res.sendStatus(404);
         }
     }
 }));
@@ -58,7 +61,6 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("sdoiioois");
     (0, user_service_1.inbox)(req, res);
 }));
 /**

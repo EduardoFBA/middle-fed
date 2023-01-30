@@ -12,5 +12,6 @@ router.get("/inbox", async (req: Request, res: Response) => {
 });
 
 router.post("/inbox", async (req: Request, res: Response) => {
+  console.log("sharedInbox");
   inbox(req, res);
 });

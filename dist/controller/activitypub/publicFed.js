@@ -21,6 +21,7 @@ router.get("/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* (
     res.send(yield (0, utils_1.list)(activitypub_core_types_1.AP.ActivityTypes.CREATE));
 }));
 router.post("/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("sharedInbox");
     (0, user_service_1.inbox)(req, res);
 }));
 //# sourceMappingURL=publicFed.js.map
