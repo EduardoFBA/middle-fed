@@ -90,7 +90,7 @@ function inbox(req, res) {
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
                     res.status(500).send(e);
                 });
-                break;
+                return;
             case activitypub_core_types_1.AP.ActivityTypes.UNDO:
                 const undoActivity = activity;
                 if (undoActivity.actor == null || undoActivity.object == null) {
@@ -107,7 +107,7 @@ function inbox(req, res) {
                 (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
                 break;
         }
-        res.sendStatus(403);
+        res.sendStatus(500);
     });
 }
 exports.inbox = inbox;

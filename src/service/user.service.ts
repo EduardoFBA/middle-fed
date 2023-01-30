@@ -109,7 +109,7 @@ export async function inbox(req: Request, res: Response) {
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
           res.status(500).send(e);
         });
-      break;
+      return;
 
     case AP.ActivityTypes.UNDO:
       const undoActivity: AP.Undo = <AP.Undo>activity;
@@ -132,7 +132,7 @@ export async function inbox(req: Request, res: Response) {
 
       break;
   }
-  res.sendStatus(403);
+  res.sendStatus(500);
 }
 
 export async function outbox(req: Request, res: Response) {

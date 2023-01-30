@@ -20,7 +20,9 @@ exports.searchApiRouter.use("/search", router);
  */
 router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+        let [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+        if (domain == null)
+            domain = req.app.get("localDomain");
         const webfingerTarget = yield (0, utils_1.getWebfinger)(`acct:${username}@${domain}`);
         const selfTarget = webfingerTarget.links.filter((link) => {
             return link.rel == "self";
@@ -29,7 +31,7 @@ router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, fun
         res.status(200).send(yield (0, utils_1.getActorInfo)(targetId));
     }
     catch (_a) {
-        res.sendStatus(500);
+        res.sendStatus(404);
     }
 }));
 //# sourceMappingURL=searchApi.js.map

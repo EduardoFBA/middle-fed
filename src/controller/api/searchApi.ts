@@ -11,7 +11,8 @@ searchApiRouter.use("/search", router);
  */
 router.get("/user/:account", async (req: Request, res: Response) => {
   try {
-    const [username, domain] = extractHandles(req.params.account);
+    let [username, domain] = extractHandles(req.params.account);
+    if (domain == null) domain = req.app.get("localDomain");
 
     const webfingerTarget = await getWebfinger(`acct:${username}@${domain}`);
     const selfTarget: any[] = webfingerTarget.links.filter((link: any) => {
@@ -21,6 +22,6 @@ router.get("/user/:account", async (req: Request, res: Response) => {
     const targetId = selfTarget[0].href;
     res.status(200).send(await getActorInfo(targetId));
   } catch {
-    res.sendStatus(500);
+    res.sendStatus(404);
   }
 });
