@@ -22,10 +22,7 @@ exports.timelineApiRouter.use("/timeline", router);
  * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
-    const userQuery = new utils_1.Query(`https://${domain}/u/${username}`);
-    userQuery.fieldPath = "actor";
-    res.send(yield (0, timeline_service_1.getNotes)(userQuery));
+    (0, user_service_1.outbox)(req, res);
 }));
 /**
  * Gets user's following's posts

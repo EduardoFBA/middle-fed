@@ -58,6 +58,15 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("sdoiioois");
     (0, user_service_1.inbox)(req, res);
+}));
+/**
+ * Gets the user's outbox
+ * @param username
+ * @requires activity - body should have an activity to be posted
+ */
+router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (0, user_service_1.outbox)(req, res);
 }));
 //# sourceMappingURL=userFed.js.map

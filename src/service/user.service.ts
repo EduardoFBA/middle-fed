@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
   activityAlreadyExists,
   buffer,
+  extractHandles,
   getActorInfo,
   Query,
   remove,
@@ -13,6 +14,7 @@ import {
   update,
 } from "../utils";
 import { createAcceptActivity } from "../utils-json";
+import { getNotes } from "./timeline.service";
 
 export async function updateActor(actor: AP.Person): Promise<void> {
   await update(AP.ActorTypes.PERSON, actor, actor.id.toString());
@@ -50,7 +52,9 @@ export async function getFollowersActivity(
 export async function inbox(req: Request, res: Response) {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+  const activity = req.body;
+  console.log(activity);
 
   if (activity == null || activity.id == null) {
     res.sendStatus(400);
@@ -79,8 +83,10 @@ export async function inbox(req: Request, res: Response) {
         res.status(409).send("Activity already exists");
         return;
       }
-
-      await save(activity.type.toString(), activity);
+      console.log(activity.type.toString());
+      console.log("993");
+      await save("activitytype", { wq: 68979 });
+      console.log("994");
 
       const localDomain = req.app.get("localDomain");
       const username = req.params.username;
@@ -88,22 +94,23 @@ export async function inbox(req: Request, res: Response) {
 
       const userInfo = await getActorInfo((<URL>activity.actor).toString());
 
-      sendSignedRequest(
-        <URL>userInfo.inbox,
-        "POST",
-        accept,
-        localDomain,
-        username
-      )
-        .then((response) => {
-          console.log(response);
-          res.sendStatus(200);
-        })
-        .catch((e) => {
-          console.log(e);
-          remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
-          res.status(500).send(e);
-        });
+      // console.log(userInfo);
+      // sendSignedRequest(
+      //   <URL>userInfo.inbox,
+      //   "POST",
+      //   accept,
+      //   localDomain,
+      //   username
+      // )
+      //   .then((response) => {
+      //     console.log(response);
+      //     res.sendStatus(200);
+      //   })
+      //   .catch((e) => {
+      //     console.log(e);
+      //     remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
+      //     res.status(500).send(e);
+      //   });
       break;
 
     case AP.ActivityTypes.UNDO:
@@ -127,4 +134,13 @@ export async function inbox(req: Request, res: Response) {
 
       break;
   }
+  res.sendStatus(403);
+}
+
+export async function outbox(req: Request, res: Response) {
+  const [username, domain] = extractHandles(req.params.account);
+  const userQuery = new Query(`https://${domain}/u/${username}`);
+  userQuery.fieldPath = "actor";
+
+  res.send(await getNotes(userQuery));
 }

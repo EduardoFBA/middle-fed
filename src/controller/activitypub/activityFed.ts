@@ -2,7 +2,6 @@ import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import {
   getActorInfo,
-  getWebfinger,
   Query,
   remove,
   save,
@@ -11,7 +10,6 @@ import {
 } from "../../utils";
 import {
   createDislikeActivity,
-  createFollowActivity,
   createLikeActivity,
   createNoteObject,
   createUndoActivity,
@@ -90,46 +88,6 @@ router.get(
 
     if (activity.length) res.send(activity[0]);
     else res.send("activity not found");
-  }
-);
-
-/**
- * Creates, saves and sends a follow activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post(
-  "/:username/follow/:target",
-  async (req: Request, res: Response) => {
-    const localDomain = req.app.get("localDomain");
-
-    const webfingerTarget = await getWebfinger(req.params.target);
-    const selfTarget: any[] = webfingerTarget.links.filter((link: any) => {
-      return link.rel == "self";
-    });
-    const targetId = selfTarget[0].href;
-    const targetInfo = await getActorInfo(targetId);
-
-    const username = req.params.username;
-
-    const follow = createFollowActivity(
-      username,
-      localDomain,
-      new URL(targetId)
-    );
-    console.log(AP.ActivityTypes.FOLLOW, follow);
-    const response = await sendSignedRequest(
-      <URL>targetInfo.inbox,
-      "POST",
-      follow,
-      localDomain,
-      username
-    );
-
-    if (response.ok) {
-      save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
-      res.sendStatus(200);
-    } else res.send({ error: "error" });
   }
 );
 

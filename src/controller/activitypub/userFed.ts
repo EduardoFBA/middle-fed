@@ -1,6 +1,10 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
-import { getFollowersActivity, inbox } from "../../service/user.service";
+import {
+  getFollowersActivity,
+  inbox,
+  outbox,
+} from "../../service/user.service";
 import { searchByField } from "../../utils";
 
 export const userFedRouter = Router();
@@ -60,5 +64,15 @@ router.get("/:username/following", async (req: Request, res: Response) => {
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", async (req: Request, res: Response) => {
+  console.log("sdoiioois");
   inbox(req, res);
+});
+
+/**
+ * Gets the user's outbox
+ * @param username
+ * @requires activity - body should have an activity to be posted
+ */
+router.post("/:username/inbox", async (req: Request, res: Response) => {
+  outbox(req, res);
 });

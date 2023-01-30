@@ -98,7 +98,7 @@ router.post("/icon/:account", async (req: Request, res: Response) => {
 /**
  * Creates a new actor for user
  */
-router.post("/", (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
   const account = req.body.account;
   if (account === undefined) {
@@ -122,12 +122,13 @@ router.post("/", (req: Request, res: Response) => {
         format: "pem",
       },
     },
-    (err, publicKey, privateKey) => {
+    async (err, publicKey, privateKey) => {
       const domain = req.app.get("localDomain");
       const userRecord = createUser(account, domain, publicKey, privateKey);
       const webfingerRecord = createWebfinger(account, domain);
       const apikey = randomBytes(16).toString("hex");
-      save(AP.ActorTypes.PERSON, userRecord);
+      await save(AP.ActorTypes.PERSON, userRecord);
+      console.log(userRecord);
       save("webfinger", webfingerRecord);
       res.status(200).json({ msg: "ok", apikey });
     }

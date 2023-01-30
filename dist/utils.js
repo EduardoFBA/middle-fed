@@ -214,11 +214,14 @@ exports.getActorInfo = getActorInfo;
 function getWebfinger(resource) {
     return __awaiter(this, void 0, void 0, function* () {
         const [username, domain] = extractHandles(resource);
-        const promise = yield searchByField("webfinger", "subject", `acct:${username}@${domain}`);
+        const account = `acct:${username}@${domain}`;
+        const promise = yield searchByField("webfinger", "subject", account);
         if (promise.length)
             return promise[0];
-        else
-            return {};
+        else {
+            const response = yield (0, node_fetch_1.default)(`https://${domain}/.well-known/webfinger?resource=${account}`);
+            return response.json();
+        }
     });
 }
 exports.getWebfinger = getWebfinger;

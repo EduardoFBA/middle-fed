@@ -71,7 +71,7 @@ router.post("/icon/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
 /**
  * Creates a new actor for user
  */
-router.post("/", (req, res) => {
+router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
     const account = req.body.account;
     if (account === undefined) {
@@ -90,14 +90,15 @@ router.post("/", (req, res) => {
             type: "pkcs8",
             format: "pem",
         },
-    }, (err, publicKey, privateKey) => {
+    }, (err, publicKey, privateKey) => __awaiter(void 0, void 0, void 0, function* () {
         const domain = req.app.get("localDomain");
         const userRecord = (0, utils_json_1.createUser)(account, domain, publicKey, privateKey);
         const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
         const apikey = (0, crypto_1.randomBytes)(16).toString("hex");
-        (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, userRecord);
+        yield (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, userRecord);
+        console.log(userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);
         res.status(200).json({ msg: "ok", apikey });
-    });
-});
+    }));
+}));
 //# sourceMappingURL=userApi.js.map

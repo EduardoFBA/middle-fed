@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.inbox = exports.getFollowersActivity = exports.getFollowers = exports.updateActor = void 0;
+exports.outbox = exports.inbox = exports.getFollowersActivity = exports.getFollowers = exports.updateActor = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
 const utils_json_1 = require("../utils-json");
+const timeline_service_1 = require("./timeline.service");
 function updateActor(actor) {
     return __awaiter(this, void 0, void 0, function* () {
         yield (0, utils_1.update)(activitypub_core_types_1.AP.ActorTypes.PERSON, actor, actor.id.toString());
@@ -47,7 +48,9 @@ function inbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
-        const activity = JSON.parse(rawBody);
+        // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
+        const activity = req.body;
+        console.log(activity);
         if (activity == null || activity.id == null) {
             res.sendStatus(400);
             return;
@@ -70,21 +73,31 @@ function inbox(req, res) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
-                yield (0, utils_1.save)(activity.type.toString(), activity);
+                console.log(activity.type.toString());
+                console.log("993");
+                yield (0, utils_1.save)("activitytype", { wq: 68979 });
+                console.log("994");
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
                 const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
-                (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
-                    .then((response) => {
-                    console.log(response);
-                    res.sendStatus(200);
-                })
-                    .catch((e) => {
-                    console.log(e);
-                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
-                    res.status(500).send(e);
-                });
+                // console.log(userInfo);
+                // sendSignedRequest(
+                //   <URL>userInfo.inbox,
+                //   "POST",
+                //   accept,
+                //   localDomain,
+                //   username
+                // )
+                //   .then((response) => {
+                //     console.log(response);
+                //     res.sendStatus(200);
+                //   })
+                //   .catch((e) => {
+                //     console.log(e);
+                //     remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
+                //     res.status(500).send(e);
+                //   });
                 break;
             case activitypub_core_types_1.AP.ActivityTypes.UNDO:
                 const undoActivity = activity;
@@ -102,7 +115,17 @@ function inbox(req, res) {
                 (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
                 break;
         }
+        res.sendStatus(403);
     });
 }
 exports.inbox = inbox;
+function outbox(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+        const userQuery = new utils_1.Query(`https://${domain}/u/${username}`);
+        userQuery.fieldPath = "actor";
+        res.send(yield (0, timeline_service_1.getNotes)(userQuery));
+    });
+}
+exports.outbox = outbox;
 //# sourceMappingURL=user.service.js.map

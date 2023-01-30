@@ -1,7 +1,7 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import { getNotes } from "../../service/timeline.service";
-import { getFollowers } from "../../service/user.service";
+import { getFollowers, outbox } from "../../service/user.service";
 import { extractHandles, Query } from "../../utils";
 
 export const timelineApiRouter = Router();
@@ -13,11 +13,7 @@ timelineApiRouter.use("/timeline", router);
  * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", async (req: Request, res: Response) => {
-  const [username, domain] = extractHandles(req.params.account);
-  const userQuery = new Query(`https://${domain}/u/${username}`);
-  userQuery.fieldPath = "actor";
-
-  res.send(await getNotes(userQuery));
+  outbox(req, res);
 });
 
 /**
