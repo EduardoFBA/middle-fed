@@ -48,8 +48,7 @@ function inbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
-        // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-        const activity = req.body;
+        const activity = JSON.parse(rawBody);
         if (activity == null || activity.id == null) {
             res.sendStatus(400);
             return;

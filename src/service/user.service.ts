@@ -52,8 +52,7 @@ export async function getFollowersActivity(
 export async function inbox(req: Request, res: Response) {
   const buf = await buffer(req);
   const rawBody = buf.toString("utf8");
-  // const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
-  const activity = req.body;
+  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
 
   if (activity == null || activity.id == null) {
     res.sendStatus(400);
