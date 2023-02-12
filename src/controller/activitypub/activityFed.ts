@@ -52,7 +52,7 @@ router.delete(
         const targetInfo = await getActorInfo(actorUrl);
         const username = req.params.username;
 
-        const undo = createUndoActivity(username, localDomain, follow);
+        const undo = await createUndoActivity(username, localDomain, follow);
 
         const response = await sendSignedRequest(
           <URL>targetInfo.inbox,
@@ -104,7 +104,7 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
   const username = req.params.username;
 
   const note = createNoteObject(name, content, username, localDomain);
-  const create = wrapObjectInActivity(
+  const create = await wrapObjectInActivity(
     AP.ActivityTypes.CREATE,
     note,
     username,
@@ -129,75 +129,3 @@ router.post("/create/note/:username/", async (req: Request, res: Response) => {
 
   res.sendStatus(200);
 });
-
-/**
- * Likes an activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post("/like/:username/", async (req: Request, res: Response) => {
-  const localDomain = req.app.get("localDomain");
-  const username = req.params.username;
-  const activity = <AP.Activity>req.body.activity;
-
-  const like = createLikeActivity(username, localDomain, activity);
-  const inbox = (activity.actor as AP.Person).inbox.toString();
-
-  const response = await likeOrDislike(
-    like,
-    localDomain,
-    username,
-    new URL(inbox)
-  );
-
-  res.sendStatus(response.status);
-});
-
-/**
- * Dislikes an activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post("/dislike/:username/", async (req: Request, res: Response) => {
-  const localDomain = req.app.get("localDomain");
-  const username = req.params.username;
-  const activity = <AP.Activity>req.body.activity;
-
-  const dislike = createDislikeActivity(username, localDomain, activity);
-  const inbox = (activity.actor as AP.Person).inbox.toString();
-
-  const response = await likeOrDislike(
-    dislike,
-    localDomain,
-    username,
-    new URL(inbox)
-  );
-
-  res.sendStatus(response.status);
-});
-
-async function likeOrDislike(
-  likeOrDislike: AP.Like | AP.Dislike,
-  domain: string,
-  username: string,
-  inbox: URL
-) {
-  const response = await sendSignedRequest(
-    inbox,
-    "POST",
-    likeOrDislike,
-    domain,
-    username
-  );
-
-  if (response.ok) {
-    await save(
-      likeOrDislike.type.toString(),
-      JSON.parse(JSON.stringify(likeOrDislike))
-    );
-  } else {
-    console.log("error", await response.text());
-  }
-
-  return response;
-}

@@ -1,7 +1,11 @@
 import { AP } from "activitypub-core-types";
 import { generateKeyPair, randomBytes } from "crypto";
 import { Request, Response, Router } from "express";
-import { getFollowers, updateActor } from "../../service/user.service";
+import {
+  getFollowers,
+  getFollowings,
+  updateActor,
+} from "../../service/user.service";
 import {
   extractHandles,
   getFromStorage,
@@ -30,6 +34,15 @@ router.get("/:account", async (req: Request, res: Response) => {
     `https://${domain}/u/${username}`
   );
   res.send(u[0]);
+});
+
+/**
+ * Gets list of user's followings
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/followings/:account", async (req: Request, res: Response) => {
+  const [username, _] = extractHandles(req.params.account);
+  res.send(await getFollowings(username));
 });
 
 /**
@@ -93,6 +106,15 @@ router.post("/icon/:account", async (req: Request, res: Response) => {
   updateActor(user);
 
   res.sendStatus(200);
+});
+
+/**
+ * updates user
+ */
+router.post("/update", async (req: Request, res: Response) => {
+  updateActor(req.body.user)
+    .then(() => res.sendStatus(200))
+    .catch((e) => res.status(500).send(e));
 });
 
 /**

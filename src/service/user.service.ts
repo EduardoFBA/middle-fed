@@ -1,5 +1,5 @@
 import { AP } from "activitypub-core-types";
-import { Request, Response } from "express";
+import { query, Request, Response } from "express";
 import {
   activityAlreadyExists,
   buffer,
@@ -21,6 +21,24 @@ export async function updateActor(actor: AP.Person): Promise<void> {
   return;
 }
 
+export async function getFollowings(
+  username: string
+): Promise<(AP.Person | AP.Follow)[]> {
+  const actors: (AP.Person | AP.Follow)[] = [];
+  const follows = await getFollowingsActivity(username);
+
+  for (const follow of follows) {
+    try {
+      const actorInfo = await getActorInfo(follow.object.toString());
+      actors.push(actorInfo as AP.Person);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  return actors;
+}
+
 export async function getFollowers(
   username: string
 ): Promise<(AP.Person | AP.Follow)[]> {
@@ -37,6 +55,16 @@ export async function getFollowers(
   }
 
   return actors;
+}
+
+export async function getFollowingsActivity(
+  username: string
+): Promise<AP.Follow[]> {
+  return await searchByField(
+    AP.ActivityTypes.FOLLOW,
+    "actor",
+    `https://middle-fed.onrender.com/u/${username}`
+  );
 }
 
 export async function getFollowersActivity(
@@ -59,7 +87,7 @@ export async function inbox(req: Request, res: Response) {
     return;
   }
   if ((activity.actor as any).id == null) {
-    activity.actor = await getActorInfo(activity.actor);
+    activity.actor = await getActorInfo(activity.actor.toString());
   }
 
   switch (activity.type) {
@@ -76,15 +104,14 @@ export async function inbox(req: Request, res: Response) {
         if (del.actor === del.object) {
           remove(AP.ActorTypes.PERSON, new Query(del.actor.toString()));
         } else if ((del.object as any).id != null) {
-          remove(
-            AP.ActivityTypes.CREATE,
-            new Query((del.object as any).id.toString())
-          );
+          const query = new Query((del.object as any).id.toString());
+          query.fieldPath = "object.id";
+          remove(AP.ActivityTypes.CREATE, query);
         }
       }
 
       res.sendStatus(200);
-      break;
+      return;
     case AP.ActivityTypes.FOLLOW:
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
@@ -93,11 +120,13 @@ export async function inbox(req: Request, res: Response) {
 
       activity.published = new Date();
 
-      await save(AP.ActivityTypes.FOLLOW, activity);
-
       const localDomain = req.app.get("localDomain");
       const username = req.params.username;
-      const accept = createAcceptActivity(username, localDomain, activity);
+      const accept = await createAcceptActivity(
+        username,
+        localDomain,
+        activity
+      );
 
       const userInfo = await getActorInfo((<URL>activity.actor).toString());
 
@@ -108,15 +137,32 @@ export async function inbox(req: Request, res: Response) {
         localDomain,
         username
       )
-        .then((response) => {
-          console.log(response);
+        .then(() => {
+          save(AP.ActivityTypes.FOLLOW, activity);
           res.sendStatus(200);
         })
         .catch((e) => {
-          console.log(e);
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
           res.status(500).send(e);
         });
+      return;
+
+    case AP.ActivityTypes.DISLIKE:
+    case AP.ActivityTypes.LIKE:
+      const like = <AP.Like | AP.Dislike>activity;
+      const wrapped = like.object as any;
+      if (!like.object || !wrapped.id) {
+        res.sendStatus(500);
+        return;
+      }
+
+      const object =
+        wrapped.type in AP.ActivityTypes && wrapped.object
+          ? wrapped.object
+          : wrapped;
+
+      object.likes.push(like);
+
       return;
 
     case AP.ActivityTypes.UNDO:
@@ -141,7 +187,6 @@ export async function inbox(req: Request, res: Response) {
 
       return;
   }
-  res.sendStatus(500);
 }
 
 export async function outbox(req: Request, res: Response) {
@@ -149,5 +194,5 @@ export async function outbox(req: Request, res: Response) {
   const userQuery = new Query(`https://${domain}/u/${username}`);
   userQuery.fieldPath = "actor";
 
-  res.send(await getNotes(userQuery));
+  res.send(await getNotes(AP.ActivityTypes.CREATE, userQuery));
 }

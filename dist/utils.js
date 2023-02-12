@@ -155,9 +155,8 @@ exports.remove = remove;
 function update(collection, object, objectId) {
     return __awaiter(this, void 0, void 0, function* () {
         const colRef = db.collection(collection);
-        colRef
-            .where("id", "==", objectId)
-            .onSnapshot((snapshot) => snapshot.forEach((result) => __awaiter(this, void 0, void 0, function* () { return yield result.ref.set(object); })));
+        const snapshot = yield colRef.where("id", "==", objectId).get();
+        snapshot.forEach((result) => __awaiter(this, void 0, void 0, function* () { return yield result.ref.set(object); }));
     });
 }
 exports.update = update;

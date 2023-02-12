@@ -39,7 +39,7 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
             const actorUrl = objectActor.id ? objectActor.id : objectActor;
             const targetInfo = yield (0, utils_1.getActorInfo)(actorUrl);
             const username = req.params.username;
-            const undo = (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
+            const undo = yield (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
             const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, localDomain, username);
             if (response.ok) {
                 (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(follow.id));
@@ -75,7 +75,7 @@ router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, v
     const addressedTo = req.body.addressedTo;
     const username = req.params.username;
     const note = (0, utils_json_1.createNoteObject)(name, content, username, localDomain);
-    const create = (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
+    const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
     for (let inbox of addressedTo) {
         const response = yield (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, localDomain, req.params.username);
         if (response.ok) {
@@ -87,44 +87,4 @@ router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, v
     }
     res.sendStatus(200);
 }));
-/**
- * Likes an activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post("/like/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const localDomain = req.app.get("localDomain");
-    const username = req.params.username;
-    const activity = req.body.activity;
-    const like = (0, utils_json_1.createLikeActivity)(username, localDomain, activity);
-    const inbox = activity.actor.inbox.toString();
-    const response = yield likeOrDislike(like, localDomain, username, new URL(inbox));
-    res.sendStatus(response.status);
-}));
-/**
- * Dislikes an activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post("/dislike/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const localDomain = req.app.get("localDomain");
-    const username = req.params.username;
-    const activity = req.body.activity;
-    const dislike = (0, utils_json_1.createDislikeActivity)(username, localDomain, activity);
-    const inbox = activity.actor.inbox.toString();
-    const response = yield likeOrDislike(dislike, localDomain, username, new URL(inbox));
-    res.sendStatus(response.status);
-}));
-function likeOrDislike(likeOrDislike, domain, username, inbox) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield (0, utils_1.sendSignedRequest)(inbox, "POST", likeOrDislike, domain, username);
-        if (response.ok) {
-            yield (0, utils_1.save)(likeOrDislike.type.toString(), JSON.parse(JSON.stringify(likeOrDislike)));
-        }
-        else {
-            console.log("error", yield response.text());
-        }
-        return response;
-    });
-}
 //# sourceMappingURL=activityFed.js.map

@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.timelineApiRouter = void 0;
+const activitypub_core_types_1 = require("activitypub-core-types");
 const express_1 = require("express");
 const timeline_service_1 = require("../../service/timeline.service");
 const user_service_1 = require("../../service/user.service");
@@ -30,14 +31,59 @@ router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, fun
  */
 router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, _] = (0, utils_1.extractHandles)(req.params.account);
-    const followers = yield (0, user_service_1.getFollowers)(username);
+    const followers = yield (0, user_service_1.getFollowings)(username);
     const queries = [];
-    for (const follower of followers) {
-        const query = new utils_1.Query(follower.id.toString());
-        query.fieldPath = "actor";
-        queries.push(query);
+    if (followers.length == 0) {
+        res.send([]);
+        return;
     }
-    res.send(yield (0, timeline_service_1.getNotes)(...queries));
+    const followerQuery = [];
+    followers.forEach((f) => {
+        followerQuery.push(f.id.toString());
+    });
+    const query = new utils_1.Query(followerQuery);
+    query.fieldPath = "actor.id";
+    query.opStr = "in";
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
+}));
+/**
+ * Gets user's followers's posts
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/followers/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, _] = (0, utils_1.extractHandles)(req.params.account);
+    const followers = yield (0, user_service_1.getFollowers)(username);
+    if (followers.length == 0) {
+        res.send([]);
+        return;
+    }
+    const followerQuery = [];
+    followers.forEach((f) => {
+        followerQuery.push(f.id.toString());
+    });
+    const query = new utils_1.Query(followerQuery);
+    query.fieldPath = "actor.id";
+    query.opStr = "in";
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
+}));
+/**
+ * Gets posts liked by user
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/liked/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+    const likeQuery = new utils_1.Query(`https://${domain}/u/${username}`);
+    likeQuery.fieldPath = "actor.id";
+    const likes = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.LIKE, likeQuery);
+    if (likes.length == 0) {
+        res.send([]);
+        return;
+    }
+    const query = new utils_1.Query(likes.map((l) => l.object.id));
+    query.fieldPath = "object.id";
+    query.opStr = "in";
+    console.log(query);
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 /**
  * Gets public posts
@@ -45,6 +91,6 @@ router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0
 router.get("/public", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = new utils_1.Query(["https://www.w3.org/ns/activitystreams#Public"]);
     query.fieldPath = "to";
-    res.send(yield (0, timeline_service_1.getNotes)(query));
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 //# sourceMappingURL=timelineApi.js.map

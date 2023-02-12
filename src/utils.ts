@@ -3,6 +3,7 @@ import { firestore, storage } from "firebase-admin";
 import { createHash, createSign, randomUUID, Sign } from "crypto";
 import fetch from "node-fetch";
 import { PassThrough, Readable } from "stream";
+import { CollectionPageTypes } from "activitypub-core-types/lib/activitypub";
 
 const db = firestore();
 const bucket = storage().bucket();
@@ -163,11 +164,8 @@ export async function update(
 ) {
   const colRef = db.collection(collection);
 
-  colRef
-    .where("id", "==", objectId)
-    .onSnapshot((snapshot) =>
-      snapshot.forEach(async (result) => await result.ref.set(object))
-    );
+  const snapshot = await colRef.where("id", "==", objectId).get();
+  snapshot.forEach(async (result) => await result.ref.set(object));
 }
 
 export async function removeActivity(undoActivity: AP.Undo) {

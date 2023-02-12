@@ -29,6 +29,14 @@ router.get("/:account", (req, res) => __awaiter(void 0, void 0, void 0, function
     res.send(u[0]);
 }));
 /**
+ * Gets list of user's followings
+ * @param account - account to filter (@username@domain)
+ */
+router.get("/followings/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const [username, _] = (0, utils_1.extractHandles)(req.params.account);
+    res.send(yield (0, user_service_1.getFollowings)(username));
+}));
+/**
  * Gets list of user's followers
  * @param account - account to filter (@username@domain)
  */
@@ -67,6 +75,14 @@ router.post("/icon/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
     icon.url = url;
     (0, user_service_1.updateActor)(user);
     res.sendStatus(200);
+}));
+/**
+ * updates user
+ */
+router.post("/update", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (0, user_service_1.updateActor)(req.body.user)
+        .then(() => res.sendStatus(200))
+        .catch((e) => res.status(500).send(e));
 }));
 /**
  * Creates a new actor for user

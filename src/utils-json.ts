@@ -1,7 +1,8 @@
 import { AP } from "activitypub-core-types";
 import { randomUUID } from "crypto";
+import { getActorInfo } from "./utils";
 
-function createActivity(
+async function createActivity(
   username: string,
   domain: string,
   activityType: string
@@ -11,19 +12,19 @@ function createActivity(
   activity.id = new URL(
     `https://${domain}/activity/${activityType}/${randomUUID()}`
   );
-  activity.actor = new URL(`https://${domain}/u/${username}`);
+  activity.actor = await getActorInfo(`https://${domain}/u/${username}`);
   activity.published = new Date();
 
   return activity;
 }
 
-export function createAcceptActivity(
+export async function createAcceptActivity(
   username: string,
   domain: string,
   activity: any
 ) {
   const accept = <AP.Accept>(
-    createActivity(username, domain, AP.ActivityTypes.ACCEPT)
+    await createActivity(username, domain, AP.ActivityTypes.ACCEPT)
   );
   accept.type = AP.ActivityTypes.ACCEPT;
   accept.object = activity;
@@ -31,28 +32,27 @@ export function createAcceptActivity(
   return accept;
 }
 
-export function createCreateActivity(
+export async function createCreateActivity(
   username: string,
   domain: string,
   object: AP.CoreObject
 ) {
   const create = <AP.Create>(
-    createActivity(username, domain, AP.ActivityTypes.CREATE)
+    await createActivity(username, domain, AP.ActivityTypes.CREATE)
   );
-  create.actor = new URL(`https://${domain}/u/${username}`);
   create.type = AP.ActivityTypes.CREATE;
   create.object = object;
 
   return create;
 }
 
-export function createDislikeActivity(
+export async function createDislikeActivity(
   username: string,
   domain: string,
-  activity: AP.Activity
+  activity: any
 ) {
   const dislike = <AP.Dislike>(
-    createActivity(username, domain, AP.ActivityTypes.DISLIKE)
+    await createActivity(username, domain, AP.ActivityTypes.DISLIKE)
   );
   dislike.type = AP.ActivityTypes.DISLIKE;
   dislike.object = activity;
@@ -60,13 +60,13 @@ export function createDislikeActivity(
   return dislike;
 }
 
-export function createFollowActivity(
+export async function createFollowActivity(
   username: string,
   domain: string,
   targetId: URL
 ) {
   const follow = <AP.Follow>(
-    createActivity(username, domain, AP.ActivityTypes.FOLLOW)
+    await createActivity(username, domain, AP.ActivityTypes.FOLLOW)
   );
   follow.type = AP.ActivityTypes.FOLLOW;
   follow.object = targetId;
@@ -74,24 +74,28 @@ export function createFollowActivity(
   return follow;
 }
 
-export function createLikeActivity(
+export async function createLikeActivity(
   username: string,
   domain: string,
-  activity: AP.Activity
+  activity: any
 ) {
-  const like = <AP.Like>createActivity(username, domain, AP.ActivityTypes.LIKE);
+  const like = <AP.Like>(
+    await createActivity(username, domain, AP.ActivityTypes.LIKE)
+  );
   like.type = AP.ActivityTypes.LIKE;
   like.object = activity;
 
   return like;
 }
 
-export function createUndoActivity(
+export async function createUndoActivity(
   username: string,
   domain: string,
   activity: AP.Activity
 ) {
-  const undo = <AP.Undo>createActivity(username, domain, AP.ActivityTypes.UNDO);
+  const undo = <AP.Undo>(
+    await createActivity(username, domain, AP.ActivityTypes.UNDO)
+  );
   undo.type = AP.ActivityTypes.UNDO;
   undo.object = activity;
 
@@ -110,6 +114,7 @@ function createObject(
     `https://${domain}/u/${username}/${objectType}/${randomUUID()}`
   );
   object.name = name;
+  object.likes = <any>[];
 
   return object;
 }
@@ -162,6 +167,7 @@ export function createUser(
     inbox: `https://${domain}/u/${name}/inbox`,
     outbox: `https://${domain}/u/${name}/outbox`,
     endpoints: { sharedInbox: `https://${domain}/public/inbox` },
+    summary: "",
 
     icon: {
       type: "Image",

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.outbox = exports.inbox = exports.getFollowersActivity = exports.getFollowers = exports.updateActor = void 0;
+exports.outbox = exports.inbox = exports.getFollowersActivity = exports.getFollowingsActivity = exports.getFollowers = exports.getFollowings = exports.updateActor = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
 const utils_json_1 = require("../utils-json");
@@ -21,6 +21,23 @@ function updateActor(actor) {
     });
 }
 exports.updateActor = updateActor;
+function getFollowings(username) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const actors = [];
+        const follows = yield getFollowingsActivity(username);
+        for (const follow of follows) {
+            try {
+                const actorInfo = yield (0, utils_1.getActorInfo)(follow.object.toString());
+                actors.push(actorInfo);
+            }
+            catch (e) {
+                console.log(e);
+            }
+        }
+        return actors;
+    });
+}
+exports.getFollowings = getFollowings;
 function getFollowers(username) {
     return __awaiter(this, void 0, void 0, function* () {
         const actors = [];
@@ -38,6 +55,12 @@ function getFollowers(username) {
     });
 }
 exports.getFollowers = getFollowers;
+function getFollowingsActivity(username) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${username}`);
+    });
+}
+exports.getFollowingsActivity = getFollowingsActivity;
 function getFollowersActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object", `https://middle-fed.onrender.com/u/${username}`);
@@ -54,7 +77,7 @@ function inbox(req, res) {
             return;
         }
         if (activity.actor.id == null) {
-            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor);
+            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor.toString());
         }
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
@@ -69,32 +92,45 @@ function inbox(req, res) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActorTypes.PERSON, new utils_1.Query(del.actor.toString()));
                     }
                     else if (del.object.id != null) {
-                        (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, new utils_1.Query(del.object.id.toString()));
+                        const query = new utils_1.Query(del.object.id.toString());
+                        query.fieldPath = "object.id";
+                        (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query);
                     }
                 }
                 res.sendStatus(200);
-                break;
+                return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
                 activity.published = new Date();
-                yield (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity);
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
-                const accept = (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
+                const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
-                    .then((response) => {
-                    console.log(response);
+                    .then(() => {
+                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity);
                     res.sendStatus(200);
                 })
                     .catch((e) => {
-                    console.log(e);
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
                     res.status(500).send(e);
                 });
+                return;
+            case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
+            case activitypub_core_types_1.AP.ActivityTypes.LIKE:
+                const like = activity;
+                const wrapped = like.object;
+                if (!like.object || !wrapped.id) {
+                    res.sendStatus(500);
+                    return;
+                }
+                const object = wrapped.type in activitypub_core_types_1.AP.ActivityTypes && wrapped.object
+                    ? wrapped.object
+                    : wrapped;
+                object.likes.push(like);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.UNDO:
                 const undoActivity = activity;
@@ -113,7 +149,6 @@ function inbox(req, res) {
                 (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
                 return;
         }
-        res.sendStatus(500);
     });
 }
 exports.inbox = inbox;
@@ -122,7 +157,7 @@ function outbox(req, res) {
         const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
         const userQuery = new utils_1.Query(`https://${domain}/u/${username}`);
         userQuery.fieldPath = "actor";
-        res.send(yield (0, timeline_service_1.getNotes)(userQuery));
+        res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, userQuery));
     });
 }
 exports.outbox = outbox;

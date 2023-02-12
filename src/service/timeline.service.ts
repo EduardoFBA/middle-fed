@@ -1,19 +1,18 @@
 import { AP } from "activitypub-core-types";
 import { Query, search, stripHtml } from "../utils";
 
-export async function getNotes(...queries: Query[]) {
+export async function getNotes(collection: string, ...queries: Query[]) {
   const typeObjectQuery = new Query(AP.CoreObjectTypes.NOTE);
   typeObjectQuery.fieldPath = "object.type";
 
-  const creates = await search(
-    AP.ActivityTypes.CREATE,
-    ...queries,
-    typeObjectQuery
-  );
+  const creates = await search(collection, ...queries, typeObjectQuery);
 
-  return creates.map((create) => {
-    const note = create.object as AP.Note;
-    note.content = stripHtml(note.content);
-    return create;
-  });
+  const response: any[] = [];
+  for (const create of creates) {
+    const note = create as any;
+    note.object.content = stripHtml(note.object.content);
+    response.push(note);
+  }
+
+  return response;
 }
