@@ -1,6 +1,5 @@
 import { Request, Response, Router } from "express";
-import { getFollowers } from "../../service/user.service";
-import { extractHandles, getActorInfo, getWebfinger, Query } from "../../utils";
+import { extractHandles, getActorInfo, getWebfinger } from "../../utils";
 
 export const searchApiRouter = Router();
 const router = Router();

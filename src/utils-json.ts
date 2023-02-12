@@ -171,7 +171,7 @@ export function createUser(
     inbox: `https://${domain}/u/${name}/inbox`,
     outbox: `https://${domain}/u/${name}/outbox`,
     endpoints: { sharedInbox: `https://${domain}/public/inbox` },
-    summary: "",
+    summary: `${name}'s actor`,
 
     icon: {
       type: "Image",

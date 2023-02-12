@@ -57,7 +57,7 @@ function getFollowers(username) {
 exports.getFollowers = getFollowers;
 function getFollowingsActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor", `https://middle-fed.onrender.com/u/${username}`);
+        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor.id", `https://middle-fed.onrender.com/u/${username}`);
     });
 }
 exports.getFollowingsActivity = getFollowingsActivity;

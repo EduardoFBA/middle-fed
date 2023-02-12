@@ -20,6 +20,16 @@ exports.userApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.userApiRouter.use("/u", router);
 /**
+ * Creates actor
+ * @param account - account to create (@username@domain)
+ */
+// router.post("/:account", async (req: Request, res: Response) => {
+//   const [username, domain] = extractHandles(req.params.account);
+//   createUser(username, domain, );
+//   const u = await save(AP.ActorTypes.PERSON, "id");
+//   res.send(u[0]);
+// });
+/**
  * Gets user's info
  * @param account - account to filter (@username@domain)
  */
@@ -89,8 +99,8 @@ router.post("/update", (req, res) => __awaiter(void 0, void 0, void 0, function*
  */
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
-    const account = req.body.account;
-    if (account === undefined) {
+    const [username, domain] = (0, utils_1.extractHandles)(req.body.account);
+    if (username === undefined) {
         return res
             .status(400)
             .send('Bad request. Please make sure "account" is a property in the POST body.');
@@ -107,9 +117,8 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             format: "pem",
         },
     }, (err, publicKey, privateKey) => __awaiter(void 0, void 0, void 0, function* () {
-        const domain = req.app.get("localDomain");
-        const userRecord = (0, utils_json_1.createUser)(account, domain, publicKey, privateKey);
-        const webfingerRecord = (0, utils_json_1.createWebfinger)(account, domain);
+        const userRecord = (0, utils_json_1.createUser)(username, domain, publicKey, privateKey);
+        const webfingerRecord = (0, utils_json_1.createWebfinger)(username, domain);
         const apikey = (0, crypto_1.randomBytes)(16).toString("hex");
         yield (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, userRecord);
         (0, utils_1.save)("webfinger", webfingerRecord);

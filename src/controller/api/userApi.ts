@@ -10,9 +10,7 @@ import {
   extractHandles,
   getFromStorage,
   getMimeByBase64,
-  Query,
   save,
-  search,
   searchByField,
   uploadToStorage,
 } from "../../utils";
@@ -21,6 +19,17 @@ import { createUser, createWebfinger } from "../../utils-json";
 export const userApiRouter = Router();
 const router = Router();
 userApiRouter.use("/u", router);
+
+/**
+ * Creates actor
+ * @param account - account to create (@username@domain)
+ */
+// router.post("/:account", async (req: Request, res: Response) => {
+//   const [username, domain] = extractHandles(req.params.account);
+//   createUser(username, domain, );
+//   const u = await save(AP.ActorTypes.PERSON, "id");
+//   res.send(u[0]);
+// });
 
 /**
  * Gets user's info
@@ -122,8 +131,8 @@ router.post("/update", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
-  const account = req.body.account;
-  if (account === undefined) {
+  const [username, domain] = extractHandles(req.body.account);
+  if (username === undefined) {
     return res
       .status(400)
       .send(
@@ -145,9 +154,8 @@ router.post("/", async (req: Request, res: Response) => {
       },
     },
     async (err, publicKey, privateKey) => {
-      const domain = req.app.get("localDomain");
-      const userRecord = createUser(account, domain, publicKey, privateKey);
-      const webfingerRecord = createWebfinger(account, domain);
+      const userRecord = createUser(username, domain, publicKey, privateKey);
+      const webfingerRecord = createWebfinger(username, domain);
       const apikey = randomBytes(16).toString("hex");
       await save(AP.ActorTypes.PERSON, userRecord);
       save("webfinger", webfingerRecord);

@@ -1,5 +1,5 @@
 import { AP } from "activitypub-core-types";
-import { query, Request, Response } from "express";
+import { Request, Response } from "express";
 import {
   activityAlreadyExists,
   buffer,
@@ -62,7 +62,7 @@ export async function getFollowingsActivity(
 ): Promise<AP.Follow[]> {
   return await searchByField(
     AP.ActivityTypes.FOLLOW,
-    "actor",
+    "actor.id",
     `https://middle-fed.onrender.com/u/${username}`
   );
 }

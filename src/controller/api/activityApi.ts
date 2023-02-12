@@ -4,7 +4,6 @@ import {
   extractHandles,
   getActorInfo,
   save,
-  search,
   sendSignedRequest,
 } from "../../utils";
 import {
@@ -56,13 +55,9 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
     }
 
     save(AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)))
-      .then((create) => res.status(200).send(create))
-      .catch((e) => {
-        console.log(e);
-        res.sendStatus(500);
-      });
+      .then(() => res.status(200).send(create))
+      .catch((e) => res.status(500).send(e));
   } catch (e) {
-    console.log(e);
     res.status(500).send(e);
   }
 });
@@ -85,6 +80,20 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
     new URL(targetId)
   );
 
+  if (
+    targetId.toString().includes("/u/") &&
+    targetId.toString().split("/u/")[0].includes(domain)
+  ) {
+    save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
+      .then(() => res.sendStatus(200))
+      .catch((e) => {
+        console.log(e);
+        res.sendStatus(500);
+      });
+
+    return;
+  }
+
   const response = await sendSignedRequest(
     <URL>targetInfo.inbox,
     "POST",
@@ -94,11 +103,12 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
   );
 
   if (response.ok) {
-    save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)));
-    res.sendStatus(200);
-  } else {
-    console.log(response);
-    res.sendStatus(500);
+    save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
+      .then(() => res.sendStatus(200))
+      .catch((e) => {
+        console.log(e);
+        res.sendStatus(500);
+      });
   }
 });
 
@@ -156,13 +166,24 @@ router.post("/:account/like", async (req: Request, res: Response) => {
 router.post("/:account/dislike", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
   const activity = <AP.Activity>req.body.activity;
+  const object = (activity as any).object;
+  const actor = activity.actor as AP.Person;
+  const dislike = await createDislikeActivity(username, domain, object);
 
-  const dislike = await createDislikeActivity(
-    username,
-    domain,
-    (activity as any).object
-  );
-  console.log(activity.actor);
+  if (
+    actor.id.toString().includes("/u/") &&
+    actor.id.toString().split("/u/")[0].includes(domain)
+  ) {
+    save(AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
+      .then(() => res.sendStatus(200))
+      .catch((e) => {
+        console.log(e);
+        res.sendStatus(500);
+      });
+
+    return;
+  }
+
   const inbox = (activity.actor as AP.Person).inbox.toString();
 
   const response = await sendSignedRequest(
@@ -173,5 +194,12 @@ router.post("/:account/dislike", async (req: Request, res: Response) => {
     username
   );
 
-  res.sendStatus(response.status);
+  if (response.ok)
+    save(AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
+      .then(() => res.sendStatus(200))
+      .catch((e) => {
+        console.log(e);
+        res.sendStatus(500);
+      });
+  else res.sendStatus(response.status);
 });

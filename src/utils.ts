@@ -98,11 +98,8 @@ export async function list(
   return docs;
 }
 
-export async function save(
-  collection: string,
-  data: any
-): Promise<firestore.WriteResult> {
-  return await db.collection(collection).doc().set(data);
+export async function save(collection: string, data: any): Promise<void> {
+  await db.collection(collection).doc().set(data);
 }
 
 export async function searchByField(

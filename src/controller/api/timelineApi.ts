@@ -1,11 +1,7 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import { getNotes } from "../../service/timeline.service";
-import {
-  getFollowers,
-  getFollowings,
-  outbox,
-} from "../../service/user.service";
+import { getFollowers, getFollowings } from "../../service/user.service";
 import { extractHandles, Query, search } from "../../utils";
 
 export const timelineApiRouter = Router();

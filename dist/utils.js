@@ -105,7 +105,7 @@ function list(collection, limit = 100) {
 exports.list = list;
 function save(collection, data) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield db.collection(collection).doc().set(data);
+        yield db.collection(collection).doc().set(data);
     });
 }
 exports.save = save;
