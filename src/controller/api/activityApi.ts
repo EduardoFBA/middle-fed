@@ -4,12 +4,15 @@ import {
   extractHandles,
   getActorInfo,
   save,
+  search,
   sendSignedRequest,
 } from "../../utils";
 import {
   createDislikeActivity,
   createFollowActivity,
   createLikeActivity,
+  createNoteObject,
+  wrapObjectInActivity,
 } from "../../utils-json";
 
 export const activityApiRouter = Router();
@@ -17,10 +20,58 @@ const router = Router();
 activityApiRouter.use("/activity", router);
 
 /**
+ * Creates, saves and sends a note activity
+ *
+ * @requestParam account - username and domain of the user (@username@domain)
+ * @requestBody content - content of the note
+ * @requestBody name - title/name of the note
+ * @requestBody addressedTo - array of inboxes to send. If empty, address to public
+ */
+router.post("/:account/create/note", async (req: Request, res: Response) => {
+  try {
+    const content: string = req.body.content;
+    const name: string = req.body.name;
+    const bto: string[] = req.body.bto ? req.body.bto : [];
+    const to: string[] = req.body.to
+      ? req.body.to
+      : ["https://www.w3.org/ns/activitystreams#Public"];
+    const [username, domain] = extractHandles(req.params.account);
+
+    const note = createNoteObject(name, content, username, domain, bto, to);
+    const create = await wrapObjectInActivity(
+      AP.ActivityTypes.CREATE,
+      note,
+      username,
+      domain
+    );
+
+    for (let inbox of to.concat(bto)) {
+      sendSignedRequest(
+        new URL(inbox),
+        "POST",
+        create,
+        domain,
+        req.params.username
+      );
+    }
+
+    save(AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)))
+      .then((create) => res.status(200).send(create))
+      .catch((e) => {
+        console.log(e);
+        res.sendStatus(500);
+      });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send(e);
+  }
+});
+
+/**
  * Creates, saves and sends a follow activity
  *
- * @param account - username and domain of the user
- * @param
+ * @requestParam account - username and domain of the user
+ * @requestBody targetId - id of the target user to follow
  */
 router.post("/:account/follow", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
@@ -54,17 +105,18 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
 /**
  * Likes an activity
  *
- * @param account - username and domain of the target user to follow (@username@domain)
+ * @requestParam account - username and domain of the user (@username@domain)
  */
 router.post("/:account/like", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
   const activity = <AP.Activity>req.body.activity;
   const object = (activity as any).object;
+  const actor = activity.actor as AP.Person;
   const like = await createLikeActivity(username, domain, object);
 
   if (
-    object.attributedTo.includes("/u/") &&
-    object.attributedTo.split("/u/")[0].includes(domain)
+    actor.id.toString().includes("/u/") &&
+    actor.id.toString().split("/u/")[0].includes(domain)
   ) {
     save(AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
       .then(() => res.sendStatus(200))
@@ -99,7 +151,7 @@ router.post("/:account/like", async (req: Request, res: Response) => {
 /**
  * Dislikes an activity
  *
- * @param account - username and domain of the target user to follow (@username@domain)
+ * @requestParam account - username and domain of the user (@username@domain)
  */
 router.post("/:account/dislike", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);

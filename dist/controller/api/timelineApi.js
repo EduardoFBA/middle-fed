@@ -23,7 +23,10 @@ exports.timelineApiRouter.use("/timeline", router);
  * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    (0, user_service_1.outbox)(req, res);
+    const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+    const query = new utils_1.Query(`https://${domain}/u/${username}`);
+    query.fieldPath = "actor.id";
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 /**
  * Gets user's following's posts
@@ -82,7 +85,6 @@ router.get("/liked/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
     const query = new utils_1.Query(likes.map((l) => l.object.id));
     query.fieldPath = "object.id";
     query.opStr = "in";
-    console.log(query);
     res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 /**
@@ -90,7 +92,7 @@ router.get("/liked/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
  */
 router.get("/public", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = new utils_1.Query(["https://www.w3.org/ns/activitystreams#Public"]);
-    query.fieldPath = "to";
+    query.fieldPath = "object.to";
     res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 //# sourceMappingURL=timelineApi.js.map

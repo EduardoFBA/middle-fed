@@ -63,28 +63,4 @@ router.get("/:activityType/:activityId", (req, res) => __awaiter(void 0, void 0,
     else
         res.send("activity not found");
 }));
-/**
- * Creates, saves and sends a note activity
- * @param username - name of current user
- * @param target - username and domain of the target user to follow (@username@domain)
- */
-router.post("/create/note/:username/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const localDomain = req.app.get("localDomain");
-    const content = req.body.content;
-    const name = req.body.name;
-    const addressedTo = req.body.addressedTo;
-    const username = req.params.username;
-    const note = (0, utils_json_1.createNoteObject)(name, content, username, localDomain);
-    const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, localDomain);
-    for (let inbox of addressedTo) {
-        const response = yield (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, localDomain, req.params.username);
-        if (response.ok) {
-            yield (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)));
-        }
-        else {
-            console.log("error", yield response.text());
-        }
-    }
-    res.sendStatus(200);
-}));
 //# sourceMappingURL=activityFed.js.map

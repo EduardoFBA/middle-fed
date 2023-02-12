@@ -18,10 +18,44 @@ exports.activityApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.activityApiRouter.use("/activity", router);
 /**
+ * Creates, saves and sends a note activity
+ *
+ * @requestParam account - username and domain of the user (@username@domain)
+ * @requestBody content - content of the note
+ * @requestBody name - title/name of the note
+ * @requestBody addressedTo - array of inboxes to send. If empty, address to public
+ */
+router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const content = req.body.content;
+        const name = req.body.name;
+        const bto = req.body.bto ? req.body.bto : [];
+        const to = req.body.to
+            ? req.body.to
+            : ["https://www.w3.org/ns/activitystreams#Public"];
+        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
+        const note = (0, utils_json_1.createNoteObject)(name, content, username, domain, bto, to);
+        const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, domain);
+        for (let inbox of to.concat(bto)) {
+            (0, utils_1.sendSignedRequest)(new URL(inbox), "POST", create, domain, req.params.username);
+        }
+        (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)))
+            .then((create) => res.status(200).send(create))
+            .catch((e) => {
+            console.log(e);
+            res.sendStatus(500);
+        });
+    }
+    catch (e) {
+        console.log(e);
+        res.status(500).send(e);
+    }
+}));
+/**
  * Creates, saves and sends a follow activity
  *
- * @param account - username and domain of the user
- * @param
+ * @requestParam account - username and domain of the user
+ * @requestBody targetId - id of the target user to follow
  */
 router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
@@ -41,15 +75,16 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
 /**
  * Likes an activity
  *
- * @param account - username and domain of the target user to follow (@username@domain)
+ * @requestParam account - username and domain of the user (@username@domain)
  */
 router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
     const activity = req.body.activity;
     const object = activity.object;
+    const actor = activity.actor;
     const like = yield (0, utils_json_1.createLikeActivity)(username, domain, object);
-    if (object.attributedTo.includes("/u/") &&
-        object.attributedTo.split("/u/")[0].includes(domain)) {
+    if (actor.id.toString().includes("/u/") &&
+        actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
             .then(() => res.sendStatus(200))
             .catch((e) => {
@@ -73,7 +108,7 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
 /**
  * Dislikes an activity
  *
- * @param account - username and domain of the target user to follow (@username@domain)
+ * @requestParam account - username and domain of the user (@username@domain)
  */
 router.post("/:account/dislike", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);

@@ -17,7 +17,12 @@ timelineApiRouter.use("/timeline", router);
  * @param account - account to filter (@username@domain)
  */
 router.get("/user/:account", async (req: Request, res: Response) => {
-  outbox(req, res);
+  const [username, domain] = extractHandles(req.params.account);
+
+  const query = new Query(`https://${domain}/u/${username}`);
+  query.fieldPath = "actor.id";
+
+  res.send(await getNotes(AP.ActivityTypes.CREATE, query));
 });
 
 /**
@@ -91,7 +96,6 @@ router.get("/liked/:account", async (req: Request, res: Response) => {
   const query = new Query(likes.map((l) => l.object.id));
   query.fieldPath = "object.id";
   query.opStr = "in";
-  console.log(query);
 
   res.send(await getNotes(AP.ActivityTypes.CREATE, query));
 });
@@ -101,6 +105,6 @@ router.get("/liked/:account", async (req: Request, res: Response) => {
  */
 router.get("/public", async (req: Request, res: Response) => {
   const query = new Query(["https://www.w3.org/ns/activitystreams#Public"]);
-  query.fieldPath = "to";
+  query.fieldPath = "object.to";
   res.send(await getNotes(AP.ActivityTypes.CREATE, query));
 });

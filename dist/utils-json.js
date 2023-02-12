@@ -85,10 +85,12 @@ function createObject(name, username, domain, objectType) {
     object.likes = [];
     return object;
 }
-function createNoteObject(name, content, username, domain) {
+function createNoteObject(name = "Note", content, username, domain, bto = [], to = ["https://www.w3.org/ns/activitystreams#Public"]) {
     const note = (createObject(name, username, domain, activitypub_core_types_1.AP.CoreObjectTypes.NOTE));
     note.type = activitypub_core_types_1.AP.CoreObjectTypes.NOTE;
     note.content = content;
+    note.bto = bto.map((x) => new URL(x));
+    note.to = to.map((x) => new URL(x));
     return note;
 }
 exports.createNoteObject = createNoteObject;

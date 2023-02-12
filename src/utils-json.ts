@@ -120,16 +120,20 @@ function createObject(
 }
 
 export function createNoteObject(
-  name: string,
+  name: string = "Note",
   content: string,
   username: string,
-  domain: string
+  domain: string,
+  bto: string[] = [],
+  to: string[] = ["https://www.w3.org/ns/activitystreams#Public"]
 ) {
   const note = <AP.Note>(
     createObject(name, username, domain, AP.CoreObjectTypes.NOTE)
   );
   note.type = AP.CoreObjectTypes.NOTE;
   note.content = content;
+  note.bto = bto.map((x) => new URL(x));
+  note.to = to.map((x) => new URL(x));
 
   return note;
 }
