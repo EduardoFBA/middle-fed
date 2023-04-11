@@ -101,7 +101,6 @@ function inbox(req, res) {
                 res.sendStatus(200);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-                console.log("follow", activity);
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
                     return;
@@ -111,8 +110,10 @@ function inbox(req, res) {
                 const username = req.params.username;
                 const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
+                console.log("follow userInfo", userInfo);
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                     .then(() => {
+                    console.log("follow", activity);
                     (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity).catch((e) => {
                         res.status(500).send(e);
                     });

@@ -116,7 +116,6 @@ export async function inbox(req: Request, res: Response) {
       res.sendStatus(200);
       return;
     case AP.ActivityTypes.FOLLOW:
-      console.log("follow", activity);
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
         return;
@@ -133,6 +132,7 @@ export async function inbox(req: Request, res: Response) {
       );
 
       const userInfo = await getActorInfo((<URL>activity.actor).toString());
+      console.log("follow userInfo", userInfo);
 
       sendSignedRequest(
         <URL>userInfo.inbox,
@@ -142,6 +142,7 @@ export async function inbox(req: Request, res: Response) {
         username
       )
         .then(() => {
+          console.log("follow", activity);
           save(AP.ActivityTypes.FOLLOW, activity).catch((e) => {
             res.status(500).send(e);
           });
