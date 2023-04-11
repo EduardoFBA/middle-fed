@@ -27,7 +27,7 @@ function getFollowings(username) {
         const follows = yield getFollowingsActivity(username);
         for (const follow of follows) {
             try {
-                const actorInfo = yield (0, utils_1.getActorInfo)(follow.object.toString());
+                const actorInfo = yield (0, utils_1.getActorInfo)(follow.object.id.toString());
                 actors.push(actorInfo);
             }
             catch (e) {
@@ -63,7 +63,7 @@ function getFollowingsActivity(username) {
 exports.getFollowingsActivity = getFollowingsActivity;
 function getFollowersActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object", `https://middle-fed.onrender.com/u/${username}`);
+        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object.id", `https://middle-fed.onrender.com/u/${username}`);
     });
 }
 exports.getFollowersActivity = getFollowersActivity;
@@ -77,7 +77,8 @@ function inbox(req, res) {
             return;
         }
         if (activity.actor.id == null) {
-            activity.actor = yield (0, utils_1.getActorInfo)(activity.actor.toString());
+            const actor = yield (0, utils_1.getActorInfo)(activity.actor.toString());
+            activity.actor = (0, utils_json_1.truncateForeignActor)(actor);
         }
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
@@ -86,7 +87,7 @@ function inbox(req, res) {
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
-                console.log(del);
+                console.log("del", del);
                 if (del.object) {
                     if (del.actor === del.object) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActorTypes.PERSON, new utils_1.Query(del.actor.toString()));
@@ -100,6 +101,7 @@ function inbox(req, res) {
                 res.sendStatus(200);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+                console.log("follow", activity);
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
                     return;
@@ -111,8 +113,9 @@ function inbox(req, res) {
                 const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
                 (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
                     .then(() => {
-                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity);
-                    res.sendStatus(200);
+                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity).catch((e) => {
+                        res.status(500).send(e);
+                    });
                 })
                     .catch((e) => {
                     (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
@@ -146,7 +149,11 @@ function inbox(req, res) {
                     return;
                 }
                 console.log(activity.type, activity);
-                (0, utils_1.save)(activity.type.toString(), activity).then(() => res.sendStatus(200));
+                (0, utils_1.save)(activity.type.toString(), activity)
+                    .then(() => res.sendStatus(200))
+                    .catch((e) => {
+                    res.status(500).send(e);
+                });
                 return;
         }
     });

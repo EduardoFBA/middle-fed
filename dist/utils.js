@@ -179,14 +179,21 @@ function activityAlreadyExists(activity) {
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
                 const follow = activity;
-                const q1 = new Query(follow.actor);
-                q1.fieldPath = "actor";
-                const q2 = new Query(follow.object);
-                q2.fieldPath = "object";
-                const followSearch = yield search(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, q1, q2);
+                const queryFollow1 = new Query(follow.actor.id);
+                queryFollow1.fieldPath = "actor.id";
+                const queryFollow2 = new Query(follow.object.id);
+                queryFollow2.fieldPath = "object.id";
+                const followSearch = yield search(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, queryFollow1, queryFollow2);
                 return !!followSearch.length;
+            case activitypub_core_types_1.AP.ActivityTypes.LIKE:
+            case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
+                const like = activity;
+                const queryLike = new Query(like.object.id);
+                queryLike.fieldPath = "object.id";
+                const likeSearch = yield search(activity.type, queryLike);
+                return !!likeSearch.length;
             default:
-                const result = yield search(activity.type, new Query(activity.id));
+                const result = yield search(activity.type, new Query(activity.id.toString()));
                 return !!result.length;
         }
     });

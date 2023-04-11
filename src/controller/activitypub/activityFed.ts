@@ -57,7 +57,7 @@ router.delete(
 
         if (response.ok) {
           remove(AP.ActivityTypes.FOLLOW, new Query(follow.id));
-          res.send("finished");
+          res.sendStatus(200);
         }
         break;
       default:

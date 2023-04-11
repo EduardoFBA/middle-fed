@@ -20,16 +20,6 @@ exports.userApiRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.userApiRouter.use("/u", router);
 /**
- * Creates actor
- * @param account - account to create (@username@domain)
- */
-// router.post("/:account", async (req: Request, res: Response) => {
-//   const [username, domain] = extractHandles(req.params.account);
-//   createUser(username, domain, );
-//   const u = await save(AP.ActorTypes.PERSON, "id");
-//   res.send(u[0]);
-// });
-/**
  * Gets user's info
  * @param account - account to filter (@username@domain)
  */
@@ -100,10 +90,10 @@ router.post("/update", (req, res) => __awaiter(void 0, void 0, void 0, function*
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
     const [username, domain] = (0, utils_1.extractHandles)(req.body.account);
-    if (username === undefined) {
+    if (username === undefined || domain === undefined) {
         return res
             .status(400)
-            .send('Bad request. Please make sure "account" is a property in the POST body.');
+            .send('Bad request. Please make sure "account" is a property in the POST body, and that the format is @username@domain');
     }
     // create keypair
     (0, crypto_1.generateKeyPair)("rsa", {

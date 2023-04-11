@@ -63,13 +63,13 @@ export async function createDislikeActivity(
 export async function createFollowActivity(
   username: string,
   domain: string,
-  targetId: URL
+  targetId: string
 ) {
   const follow = <AP.Follow>(
     await createActivity(username, domain, AP.ActivityTypes.FOLLOW)
   );
   follow.type = AP.ActivityTypes.FOLLOW;
-  follow.object = targetId;
+  follow.object = await getActorInfo(targetId);
 
   return follow;
 }
@@ -200,4 +200,20 @@ export function createWebfinger(name: string, domain: string) {
       },
     ],
   };
+}
+
+export function truncateForeignActor(actor: AP.Actor): AP.Actor {
+  return {
+    id: actor.id,
+    type: actor.type,
+    preferredUsername: actor.preferredUsername,
+    followers: actor.followers,
+    following: actor.following,
+    inbox: actor.inbox,
+    outbox: actor.outbox,
+    endpoints: actor.endpoints,
+    summary: actor.summary,
+    icon: actor.icon,
+    publicKey: actor.publicKey,
+  } as AP.Person;
 }

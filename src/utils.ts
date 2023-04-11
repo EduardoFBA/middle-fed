@@ -184,18 +184,31 @@ export async function activityAlreadyExists(
   switch (activity.type) {
     case AP.ActivityTypes.FOLLOW:
       const follow = <AP.Follow>activity;
-      const q1 = new Query(follow.actor);
-      q1.fieldPath = "actor";
+      const queryFollow1 = new Query((follow.actor as any).id);
+      queryFollow1.fieldPath = "actor.id";
 
-      const q2 = new Query(follow.object);
-      q2.fieldPath = "object";
+      const queryFollow2 = new Query((follow.object as any).id);
+      queryFollow2.fieldPath = "object.id";
 
-      const followSearch = await search(AP.ActivityTypes.FOLLOW, q1, q2);
+      const followSearch = await search(
+        AP.ActivityTypes.FOLLOW,
+        queryFollow1,
+        queryFollow2
+      );
       return !!followSearch.length;
+
+    case AP.ActivityTypes.LIKE:
+    case AP.ActivityTypes.DISLIKE:
+      const like = <AP.Like>activity;
+      const queryLike = new Query((like.object as any).id);
+      queryLike.fieldPath = "object.id";
+      const likeSearch = await search(activity.type as string, queryLike);
+      return !!likeSearch.length;
+
     default:
       const result = await search(
         activity.type as string,
-        new Query(activity.id)
+        new Query(activity.id.toString())
       );
       return !!result.length;
   }

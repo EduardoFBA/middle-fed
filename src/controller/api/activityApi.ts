@@ -1,6 +1,7 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import {
+  activityAlreadyExists,
   extractHandles,
   getActorInfo,
   save,
@@ -70,15 +71,14 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
  */
 router.post("/:account/follow", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
-
   const targetId = req.body.targetId;
-  const targetInfo = await getActorInfo(targetId);
 
-  const follow = await createFollowActivity(
-    username,
-    domain,
-    new URL(targetId)
-  );
+  const follow = await createFollowActivity(username, domain, targetId);
+
+  if (await activityAlreadyExists(follow)) {
+    res.status(409).send("Activity already exists");
+    return;
+  }
 
   if (
     targetId.toString().includes("/u/") &&
@@ -95,7 +95,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
   }
 
   const response = await sendSignedRequest(
-    <URL>targetInfo.inbox,
+    <URL>(follow.object as any).inbox,
     "POST",
     follow,
     domain,
@@ -120,9 +120,15 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
 router.post("/:account/like", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
   const activity = <AP.Activity>req.body.activity;
+
   const object = (activity as any).object;
   const actor = activity.actor as AP.Person;
   const like = await createLikeActivity(username, domain, object);
+
+  if (await activityAlreadyExists(like)) {
+    res.status(409).send("Activity already exists");
+    return;
+  }
 
   if (
     actor.id.toString().includes("/u/") &&
@@ -166,6 +172,12 @@ router.post("/:account/like", async (req: Request, res: Response) => {
 router.post("/:account/dislike", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
   const activity = <AP.Activity>req.body.activity;
+
+  if (await activityAlreadyExists(activity)) {
+    res.status(409).send("Activity already exists");
+    return;
+  }
+
   const object = (activity as any).object;
   const actor = activity.actor as AP.Person;
   const dislike = await createDislikeActivity(username, domain, object);

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createLikeActivity = exports.createFollowActivity = exports.createDislikeActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
+exports.truncateForeignActor = exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createLikeActivity = exports.createFollowActivity = exports.createDislikeActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 const utils_1 = require("./utils");
@@ -54,7 +54,7 @@ function createFollowActivity(username, domain, targetId) {
     return __awaiter(this, void 0, void 0, function* () {
         const follow = (yield createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.FOLLOW));
         follow.type = activitypub_core_types_1.AP.ActivityTypes.FOLLOW;
-        follow.object = targetId;
+        follow.object = yield (0, utils_1.getActorInfo)(targetId);
         return follow;
     });
 }
@@ -144,4 +144,20 @@ function createWebfinger(name, domain) {
     };
 }
 exports.createWebfinger = createWebfinger;
+function truncateForeignActor(actor) {
+    return {
+        id: actor.id,
+        type: actor.type,
+        preferredUsername: actor.preferredUsername,
+        followers: actor.followers,
+        following: actor.following,
+        inbox: actor.inbox,
+        outbox: actor.outbox,
+        endpoints: actor.endpoints,
+        summary: actor.summary,
+        icon: actor.icon,
+        publicKey: actor.publicKey,
+    };
+}
+exports.truncateForeignActor = truncateForeignActor;
 //# sourceMappingURL=utils-json.js.map

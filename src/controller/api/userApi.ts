@@ -21,17 +21,6 @@ const router = Router();
 userApiRouter.use("/u", router);
 
 /**
- * Creates actor
- * @param account - account to create (@username@domain)
- */
-// router.post("/:account", async (req: Request, res: Response) => {
-//   const [username, domain] = extractHandles(req.params.account);
-//   createUser(username, domain, );
-//   const u = await save(AP.ActorTypes.PERSON, "id");
-//   res.send(u[0]);
-// });
-
-/**
  * Gets user's info
  * @param account - account to filter (@username@domain)
  */
@@ -132,11 +121,11 @@ router.post("/update", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   //FIXME: this endpoint needs to be improved on. Needs to be a sign in instead of just creating a user actor
   const [username, domain] = extractHandles(req.body.account);
-  if (username === undefined) {
+  if (username === undefined || domain === undefined) {
     return res
       .status(400)
       .send(
-        'Bad request. Please make sure "account" is a property in the POST body.'
+        'Bad request. Please make sure "account" is a property in the POST body, and that the format is @username@domain'
       );
   }
   // create keypair

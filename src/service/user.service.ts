@@ -13,7 +13,7 @@ import {
   sendSignedRequest,
   update,
 } from "../utils";
-import { createAcceptActivity } from "../utils-json";
+import { createAcceptActivity, truncateForeignActor } from "../utils-json";
 import { getNotes } from "./timeline.service";
 
 export async function updateActor(actor: AP.Person): Promise<void> {
@@ -29,7 +29,9 @@ export async function getFollowings(
 
   for (const follow of follows) {
     try {
-      const actorInfo = await getActorInfo(follow.object.toString());
+      const actorInfo = await getActorInfo(
+        (follow.object as any).id.toString()
+      );
       actors.push(actorInfo as AP.Person);
     } catch (e) {
       console.log(e);
@@ -72,7 +74,7 @@ export async function getFollowersActivity(
 ): Promise<AP.Follow[]> {
   return await searchByField(
     AP.ActivityTypes.FOLLOW,
-    "object",
+    "object.id",
     `https://middle-fed.onrender.com/u/${username}`
   );
 }
@@ -87,7 +89,8 @@ export async function inbox(req: Request, res: Response) {
     return;
   }
   if ((activity.actor as any).id == null) {
-    activity.actor = await getActorInfo(activity.actor.toString());
+    const actor = await getActorInfo(activity.actor.toString());
+    activity.actor = truncateForeignActor(actor);
   }
 
   switch (activity.type) {
@@ -98,7 +101,7 @@ export async function inbox(req: Request, res: Response) {
 
     case AP.ActivityTypes.DELETE:
       const del = <AP.Delete>activity;
-      console.log(del);
+      console.log("del", del);
 
       if (del.object) {
         if (del.actor === del.object) {
@@ -113,6 +116,7 @@ export async function inbox(req: Request, res: Response) {
       res.sendStatus(200);
       return;
     case AP.ActivityTypes.FOLLOW:
+      console.log("follow", activity);
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
         return;
@@ -138,8 +142,9 @@ export async function inbox(req: Request, res: Response) {
         username
       )
         .then(() => {
-          save(AP.ActivityTypes.FOLLOW, activity);
-          res.sendStatus(200);
+          save(AP.ActivityTypes.FOLLOW, activity).catch((e) => {
+            res.status(500).send(e);
+          });
         })
         .catch((e) => {
           remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
@@ -173,7 +178,6 @@ export async function inbox(req: Request, res: Response) {
       }
 
       removeActivity(undoActivity).then(() => res.sendStatus(200));
-
       return;
 
     default:
@@ -183,7 +187,11 @@ export async function inbox(req: Request, res: Response) {
       }
 
       console.log(activity.type, activity);
-      save(activity.type.toString(), activity).then(() => res.sendStatus(200));
+      save(activity.type.toString(), activity)
+        .then(() => res.sendStatus(200))
+        .catch((e) => {
+          res.status(500).send(e);
+        });
 
       return;
   }

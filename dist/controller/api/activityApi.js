@@ -56,8 +56,11 @@ router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, voi
 router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
     const targetId = req.body.targetId;
-    const targetInfo = yield (0, utils_1.getActorInfo)(targetId);
-    const follow = yield (0, utils_json_1.createFollowActivity)(username, domain, new URL(targetId));
+    const follow = yield (0, utils_json_1.createFollowActivity)(username, domain, targetId);
+    if (yield (0, utils_1.activityAlreadyExists)(follow)) {
+        res.status(409).send("Activity already exists");
+        return;
+    }
     if (targetId.toString().includes("/u/") &&
         targetId.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
@@ -68,7 +71,7 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
         });
         return;
     }
-    const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", follow, domain, username);
+    const response = yield (0, utils_1.sendSignedRequest)(follow.object.inbox, "POST", follow, domain, username);
     if (response.ok) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
             .then(() => res.sendStatus(200))
@@ -89,6 +92,10 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
     const object = activity.object;
     const actor = activity.actor;
     const like = yield (0, utils_json_1.createLikeActivity)(username, domain, object);
+    if (yield (0, utils_1.activityAlreadyExists)(like)) {
+        res.status(409).send("Activity already exists");
+        return;
+    }
     if (actor.id.toString().includes("/u/") &&
         actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
@@ -119,6 +126,10 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
 router.post("/:account/dislike", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
     const activity = req.body.activity;
+    if (yield (0, utils_1.activityAlreadyExists)(activity)) {
+        res.status(409).send("Activity already exists");
+        return;
+    }
     const object = activity.object;
     const actor = activity.actor;
     const dislike = yield (0, utils_json_1.createDislikeActivity)(username, domain, object);
