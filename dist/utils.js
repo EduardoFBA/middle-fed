@@ -123,6 +123,7 @@ function searchByField(collection, field, value) {
 exports.searchByField = searchByField;
 function search(collection, ...queries) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("search", queries);
         const colRef = db.collection(collection);
         let query;
         for (let i = 0; i < queries.length; i++) {

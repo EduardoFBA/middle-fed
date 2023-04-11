@@ -122,6 +122,7 @@ export async function search(
   collection: string,
   ...queries: Query[]
 ): Promise<any[]> {
+  console.log("search", queries);
   const colRef = db.collection(collection);
   let query: FirebaseFirestore.Query;
   for (let i = 0; i < queries.length; i++) {
