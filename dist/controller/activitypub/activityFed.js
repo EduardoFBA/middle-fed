@@ -40,7 +40,7 @@ router.delete("/:username/undo/:activityId/:activityType", (req, res) => __await
             const targetInfo = yield (0, utils_1.getActorInfo)(actorUrl);
             const username = req.params.username;
             const undo = yield (0, utils_json_1.createUndoActivity)(username, localDomain, follow);
-            const response = yield (0, utils_1.sendSignedRequest)(targetInfo.inbox, "POST", undo, localDomain, username);
+            const response = yield (0, utils_1.sendSignedRequestByAccount)(targetInfo.inbox, "POST", undo, localDomain, username);
             if (response.ok) {
                 (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(follow.id));
                 res.sendStatus(200);

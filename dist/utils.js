@@ -19,7 +19,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
+exports.sendSignedRequestByAccount = exports.sendSignedRequestById = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto_1 = require("crypto");
@@ -258,9 +258,22 @@ function buffer(readable) {
     });
 }
 exports.buffer = buffer;
-function sendSignedRequest(endpoint, method, object, domain, username) {
+function sendSignedRequestById(endpoint, method, object, id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const actorInfo = (yield searchByField(activitypub_core_types_1.AP.ActorTypes.PERSON, "id", id))[0];
+        return sendSignedRequest(endpoint, method, object, actorInfo);
+    });
+}
+exports.sendSignedRequestById = sendSignedRequestById;
+function sendSignedRequestByAccount(endpoint, method, object, domain, username) {
     return __awaiter(this, void 0, void 0, function* () {
         const actorInfo = (yield searchByField(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${username}@${domain}`))[0];
+        return sendSignedRequest(endpoint, method, object, actorInfo);
+    });
+}
+exports.sendSignedRequestByAccount = sendSignedRequestByAccount;
+function sendSignedRequest(endpoint, method, object, actorInfo) {
+    return __awaiter(this, void 0, void 0, function* () {
         const activity = JSON.stringify(object);
         const requestHeaders = {
             host: endpoint.hostname,
@@ -276,7 +289,6 @@ function sendSignedRequest(endpoint, method, object, domain, username) {
         });
     });
 }
-exports.sendSignedRequest = sendSignedRequest;
 function sign(url, method, headers, publicKeyId, privateKey) {
     const { host, pathname, search } = new URL(url);
     const target = `${pathname}${search}`;

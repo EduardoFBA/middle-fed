@@ -10,7 +10,7 @@ import {
   removeActivity,
   save,
   searchByField,
-  sendSignedRequest,
+  sendSignedRequestByAccount,
   update,
 } from "../utils";
 import { createAcceptActivity, truncateForeignActor } from "../utils-json";
@@ -94,10 +94,17 @@ export async function inbox(req: Request, res: Response) {
     activity.actor = truncateForeignActor(actor);
   }
 
+  searchByField(AP.ActorTypes.PERSON, "id", (activity.actor as any).id)
+    .then((act) => {
+      if (act.length === 0)
+        save(AP.ActorTypes.PERSON, activity.actor).catch((e) => console.log(e));
+    })
+    .catch((e) => console.log(e));
+
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
       console.log("accept", activity);
-      res.sendStatus(200);
+      res.sendStatus(202);
       return;
 
     case AP.ActivityTypes.DELETE:
@@ -114,7 +121,7 @@ export async function inbox(req: Request, res: Response) {
         }
       }
 
-      res.sendStatus(200);
+      res.sendStatus(202);
       return;
     case AP.ActivityTypes.FOLLOW:
       const follow = <AP.Follow>activity;
@@ -134,7 +141,7 @@ export async function inbox(req: Request, res: Response) {
       const username = req.params.username;
       const accept = await createAcceptActivity(username, localDomain, follow);
 
-      sendSignedRequest(
+      sendSignedRequestByAccount(
         <URL>(follow.actor as any).inbox,
         "POST",
         accept,

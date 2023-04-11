@@ -258,7 +258,20 @@ export async function buffer(readable: Readable) {
   return Buffer.concat(chunks);
 }
 
-export async function sendSignedRequest(
+export async function sendSignedRequestById(
+  endpoint: URL,
+  method: string,
+  object: AP.Activity,
+  id: string | URL
+): Promise<Response> {
+  const actorInfo = (
+    await searchByField(AP.ActorTypes.PERSON, "id", id as string)
+  )[0];
+
+  return sendSignedRequest(endpoint, method, object, actorInfo);
+}
+
+export async function sendSignedRequestByAccount(
   endpoint: URL,
   method: string,
   object: AP.Activity,
@@ -273,6 +286,15 @@ export async function sendSignedRequest(
     )
   )[0];
 
+  return sendSignedRequest(endpoint, method, object, actorInfo);
+}
+
+async function sendSignedRequest(
+  endpoint: URL,
+  method: string,
+  object: AP.Activity,
+  actorInfo: any
+): Promise<Response> {
   const activity = JSON.stringify(object);
   const requestHeaders = {
     host: endpoint.hostname,

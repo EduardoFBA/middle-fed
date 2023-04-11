@@ -80,10 +80,16 @@ function inbox(req, res) {
             const actor = yield (0, utils_1.getActorInfo)(activity.actor.toString());
             activity.actor = (0, utils_json_1.truncateForeignActor)(actor);
         }
+        (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "id", activity.actor.id)
+            .then((act) => {
+            if (act.length === 0)
+                (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, activity.actor).catch((e) => console.log(e));
+        })
+            .catch((e) => console.log(e));
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
                 console.log("accept", activity);
-                res.sendStatus(200);
+                res.sendStatus(202);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
@@ -98,7 +104,7 @@ function inbox(req, res) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query);
                     }
                 }
-                res.sendStatus(200);
+                res.sendStatus(202);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
                 const follow = activity;
@@ -113,7 +119,7 @@ function inbox(req, res) {
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
                 const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, follow);
-                (0, utils_1.sendSignedRequest)(follow.actor.inbox, "POST", accept, localDomain, username)
+                (0, utils_1.sendSignedRequestByAccount)(follow.actor.inbox, "POST", accept, localDomain, username)
                     .then(() => {
                     console.log("follow", follow);
                     (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow).catch((e) => {

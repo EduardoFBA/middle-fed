@@ -5,7 +5,7 @@ import {
   Query,
   remove,
   searchByField,
-  sendSignedRequest,
+  sendSignedRequestByAccount,
 } from "../../utils";
 import { createUndoActivity } from "../../utils-json";
 
@@ -47,7 +47,7 @@ router.delete(
 
         const undo = await createUndoActivity(username, localDomain, follow);
 
-        const response = await sendSignedRequest(
+        const response = await sendSignedRequestByAccount(
           <URL>targetInfo.inbox,
           "POST",
           undo,

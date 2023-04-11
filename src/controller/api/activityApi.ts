@@ -1,11 +1,11 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
+import { sendToAll } from "../../service/activity.service";
 import {
   activityAlreadyExists,
   extractHandles,
-  getActorInfo,
   save,
-  sendSignedRequest,
+  sendSignedRequestByAccount,
 } from "../../utils";
 import {
   createDislikeActivity,
@@ -32,7 +32,8 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
     const content: string = req.body.content;
     const name: string = req.body.name;
     const bto: string[] = req.body.bto ? req.body.bto : [];
-    const to: string[] = req.body.to
+    const publicPost: boolean = req.body.to && req.body.to.length;
+    const to: string[] = publicPost
       ? req.body.to
       : ["https://www.w3.org/ns/activitystreams#Public"];
     const [username, domain] = extractHandles(req.params.account);
@@ -45,14 +46,18 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
       domain
     );
 
-    for (let inbox of to.concat(bto)) {
-      sendSignedRequest(
-        new URL(inbox),
-        "POST",
-        create,
-        domain,
-        req.params.username
-      );
+    if (publicPost) {
+      sendToAll;
+    } else {
+      for (let inbox of to.concat(bto)) {
+        sendSignedRequestByAccount(
+          new URL(inbox),
+          "POST",
+          create,
+          domain,
+          req.params.username
+        );
+      }
     }
 
     save(AP.ActivityTypes.CREATE, JSON.parse(JSON.stringify(create)))
@@ -94,7 +99,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
     return;
   }
 
-  const response = await sendSignedRequest(
+  const response = await sendSignedRequestByAccount(
     <URL>(follow.object as any).inbox,
     "POST",
     follow,
@@ -146,7 +151,7 @@ router.post("/:account/like", async (req: Request, res: Response) => {
 
   const inbox = (activity.actor as AP.Person).inbox.toString();
 
-  const response = await sendSignedRequest(
+  const response = await sendSignedRequestByAccount(
     new URL(inbox),
     "POST",
     like,
@@ -198,7 +203,7 @@ router.post("/:account/dislike", async (req: Request, res: Response) => {
 
   const inbox = (activity.actor as AP.Person).inbox.toString();
 
-  const response = await sendSignedRequest(
+  const response = await sendSignedRequestByAccount(
     new URL(inbox),
     "POST",
     dislike,
