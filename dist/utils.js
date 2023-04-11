@@ -19,7 +19,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.getActorId = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
+exports.sendSignedRequest = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto_1 = require("crypto");
@@ -200,13 +200,6 @@ function activityAlreadyExists(activity) {
     });
 }
 exports.activityAlreadyExists = activityAlreadyExists;
-function getActorId(userId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const promise = yield (0, node_fetch_1.default)(userId);
-        return yield promise.json();
-    });
-}
-exports.getActorId = getActorId;
 function getActorInfo(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const promise = yield (0, node_fetch_1.default)(userId, {

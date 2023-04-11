@@ -215,12 +215,7 @@ export async function activityAlreadyExists(
   }
 }
 
-export async function getActorId(userId: string): Promise<AP.Actor> {
-  const promise = await fetch(userId);
-  return await promise.json();
-}
-
-export async function getActorInfo(userId: string): Promise<AP.Actor> {
+export async function getActorInfo(userId: string | URL): Promise<AP.Actor> {
   const promise = await fetch(userId, {
     headers: {
       Accept: "application/activity+json",

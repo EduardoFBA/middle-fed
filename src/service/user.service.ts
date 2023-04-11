@@ -88,6 +88,7 @@ export async function inbox(req: Request, res: Response) {
     res.sendStatus(400);
     return;
   }
+
   if ((activity.actor as any).id == null) {
     const actor = await getActorInfo(activity.actor.toString());
     activity.actor = truncateForeignActor(actor);
@@ -116,39 +117,38 @@ export async function inbox(req: Request, res: Response) {
       res.sendStatus(200);
       return;
     case AP.ActivityTypes.FOLLOW:
+      const follow = <AP.Follow>activity;
+
+      if ((follow.object as any).id == null) {
+        follow.object = await getActorInfo(follow.object as URL);
+      }
+
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
         return;
       }
 
-      activity.published = new Date();
+      follow.published = new Date();
 
       const localDomain = req.app.get("localDomain");
       const username = req.params.username;
-      const accept = await createAcceptActivity(
-        username,
-        localDomain,
-        activity
-      );
-
-      const userInfo = await getActorInfo((<URL>activity.actor).toString());
-      console.log("follow userInfo", userInfo);
+      const accept = await createAcceptActivity(username, localDomain, follow);
 
       sendSignedRequest(
-        <URL>userInfo.inbox,
+        <URL>(follow.actor as any).inbox,
         "POST",
         accept,
         localDomain,
         username
       )
         .then(() => {
-          console.log("follow", activity);
-          save(AP.ActivityTypes.FOLLOW, activity).catch((e) => {
+          console.log("follow", follow);
+          save(AP.ActivityTypes.FOLLOW, follow).catch((e) => {
             res.status(500).send(e);
           });
         })
         .catch((e) => {
-          remove(AP.ActivityTypes.FOLLOW, new Query(activity.id));
+          remove(AP.ActivityTypes.FOLLOW, new Query(follow.id));
           res.status(500).send(e);
         });
       return;

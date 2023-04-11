@@ -97,7 +97,18 @@ router.get("/liked/:account", async (req: Request, res: Response) => {
 });
 
 /**
+ * Gets local posts
+ */
+router.get("/local", async (req: Request, res: Response) => {
+  const localQuery = new Query(null);
+  localQuery.fieldPath = "actor.account";
+  localQuery.opStr = "!=";
+  res.send(await getNotes(AP.ActivityTypes.CREATE, localQuery));
+});
+
+/**
  * Gets public posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/public", async (req: Request, res: Response) => {
   const query = new Query(["https://www.w3.org/ns/activitystreams#Public"]);

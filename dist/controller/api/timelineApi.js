@@ -88,7 +88,17 @@ router.get("/liked/:account", (req, res) => __awaiter(void 0, void 0, void 0, fu
     res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query));
 }));
 /**
+ * Gets local posts
+ */
+router.get("/local", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const localQuery = new utils_1.Query(null);
+    localQuery.fieldPath = "actor.account";
+    localQuery.opStr = "!=";
+    res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, localQuery));
+}));
+/**
  * Gets public posts
+ * @param account - account to filter (@username@domain)
  */
 router.get("/public", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = new utils_1.Query(["https://www.w3.org/ns/activitystreams#Public"]);

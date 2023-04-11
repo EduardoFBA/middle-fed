@@ -101,25 +101,27 @@ function inbox(req, res) {
                 res.sendStatus(200);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
+                const follow = activity;
+                if (follow.object.id == null) {
+                    follow.object = yield (0, utils_1.getActorInfo)(follow.object);
+                }
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
-                activity.published = new Date();
+                follow.published = new Date();
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
-                const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, activity);
-                const userInfo = yield (0, utils_1.getActorInfo)(activity.actor.toString());
-                console.log("follow userInfo", userInfo);
-                (0, utils_1.sendSignedRequest)(userInfo.inbox, "POST", accept, localDomain, username)
+                const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, follow);
+                (0, utils_1.sendSignedRequest)(follow.actor.inbox, "POST", accept, localDomain, username)
                     .then(() => {
-                    console.log("follow", activity);
-                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, activity).catch((e) => {
+                    console.log("follow", follow);
+                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow).catch((e) => {
                         res.status(500).send(e);
                     });
                 })
                     .catch((e) => {
-                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(activity.id));
+                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(follow.id));
                     res.status(500).send(e);
                 });
                 return;
