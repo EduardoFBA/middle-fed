@@ -203,7 +203,7 @@ export function createWebfinger(name: string, domain: string) {
 }
 
 export function truncateForeignActor(actor: AP.Actor): AP.Actor {
-  return {
+  const person = {
     id: actor.id,
     type: actor.type,
     preferredUsername: actor.preferredUsername,
@@ -215,5 +215,9 @@ export function truncateForeignActor(actor: AP.Actor): AP.Actor {
     summary: actor.summary,
     icon: actor.icon,
     publicKey: actor.publicKey,
-  } as AP.Person;
+  };
+
+  if (!person.icon) delete person.icon;
+
+  return person as AP.Actor;
 }

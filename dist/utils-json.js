@@ -145,7 +145,7 @@ function createWebfinger(name, domain) {
 }
 exports.createWebfinger = createWebfinger;
 function truncateForeignActor(actor) {
-    return {
+    const person = {
         id: actor.id,
         type: actor.type,
         preferredUsername: actor.preferredUsername,
@@ -158,6 +158,9 @@ function truncateForeignActor(actor) {
         icon: actor.icon,
         publicKey: actor.publicKey,
     };
+    if (!person.icon)
+        delete person.icon;
+    return person;
 }
 exports.truncateForeignActor = truncateForeignActor;
 //# sourceMappingURL=utils-json.js.map
