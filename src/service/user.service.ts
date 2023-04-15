@@ -185,7 +185,9 @@ export async function inbox(req: Request, res: Response) {
         return;
       }
 
-      removeActivity(undoActivity).then(() => res.sendStatus(200));
+      removeActivity(undoActivity.object as AP.Activity).then(() =>
+        res.sendStatus(200)
+      );
       return;
 
     default:

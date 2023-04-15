@@ -28,18 +28,19 @@ exports.activityApiRouter.use("/activity", router);
  */
 router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
         const content = req.body.content;
         const name = req.body.name;
         const bto = req.body.bto ? req.body.bto : [];
-        const publicPost = req.body.to && req.body.to.length;
-        const to = publicPost
+        const publicPost = req.body.to == null || req.body.to.length === 0;
+        const to = !publicPost
             ? req.body.to
             : ["https://www.w3.org/ns/activitystreams#Public"];
-        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
         const note = (0, utils_json_1.createNoteObject)(name, content, username, domain, bto, to);
         const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, domain);
+        console.log(publicPost);
         if (publicPost) {
-            activity_service_1.sendToAll;
+            (0, activity_service_1.sendToAll)(domain, username, create);
         }
         else {
             for (let inbox of to.concat(bto)) {

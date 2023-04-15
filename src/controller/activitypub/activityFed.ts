@@ -4,6 +4,7 @@ import {
   getActorInfo,
   Query,
   remove,
+  removeActivity,
   searchByField,
   sendSignedRequestByAccount,
 } from "../../utils";
@@ -12,6 +13,21 @@ import { createUndoActivity } from "../../utils-json";
 export const activityFedRouter = Router();
 const router = Router();
 activityFedRouter.use("/activity", router);
+
+/**
+ * Deletes an activity
+ *
+ * @requestParam activityId - id of the activity to delete
+ */
+router.delete("/:activityType/:uuid", async (req: Request, res: Response) => {
+  const activity = await searchByField(
+    req.params.activityType,
+    "id",
+    `https://middle-fed.onrender.com${req.originalUrl}`
+  );
+
+  removeActivity(activity[0] as AP.Activity).then(() => res.sendStatus(202));
+});
 
 /**
  * Undoes an activity

@@ -150,7 +150,7 @@ function inbox(req, res) {
                     res.status(400).send("Activity missing required fields");
                     return;
                 }
-                (0, utils_1.removeActivity)(undoActivity).then(() => res.sendStatus(200));
+                (0, utils_1.removeActivity)(undoActivity.object).then(() => res.sendStatus(200));
                 return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {

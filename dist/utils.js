@@ -19,12 +19,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequestByAccount = exports.sendSignedRequestById = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
+exports.sendSignedRequest = exports.sendSignedRequestByAccount = exports.sendSignedRequestById = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const firebase_admin_1 = require("firebase-admin");
 const crypto_1 = require("crypto");
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const stream_1 = require("stream");
+const activity_service_1 = require("./service/activity.service");
+const utils_json_1 = require("./utils-json");
 const db = (0, firebase_admin_1.firestore)();
 const bucket = (0, firebase_admin_1.storage)().bucket();
 class Query {
@@ -161,12 +163,16 @@ function update(collection, object, objectId) {
     });
 }
 exports.update = update;
-function removeActivity(undoActivity) {
+function removeActivity(activity) {
     return __awaiter(this, void 0, void 0, function* () {
-        const targetActivity = undoActivity.object;
-        switch (targetActivity.type) {
+        switch (activity.type) {
+            case activitypub_core_types_1.AP.ActivityTypes.CREATE:
+                const [username, domain] = extractHandles(activity.actor.account);
+                const undo = yield (0, utils_json_1.createDeleteActivity)(username, domain, activity);
+                (0, activity_service_1.sendToAll)(domain, username, undo).then(() => remove(activity.type, new Query(activity.id.toString())));
+                break;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
-                remove(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new Query(targetActivity.id.toString()));
+                remove(activity.type, new Query(activity.id.toString()));
                 break;
             default:
                 return "ActivityType not supported or doesn't exist";
@@ -289,6 +295,7 @@ function sendSignedRequest(endpoint, method, object, actorInfo) {
         });
     });
 }
+exports.sendSignedRequest = sendSignedRequest;
 function sign(url, method, headers, publicKeyId, privateKey) {
     const { host, pathname, search } = new URL(url);
     const target = `${pathname}${search}`;

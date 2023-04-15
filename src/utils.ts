@@ -4,6 +4,8 @@ import { createHash, createSign, randomUUID, Sign } from "crypto";
 import fetch from "node-fetch";
 import { PassThrough, Readable } from "stream";
 import { CollectionPageTypes } from "activitypub-core-types/lib/activitypub";
+import { sendToAll } from "./service/activity.service";
+import { createDeleteActivity, createUndoActivity } from "./utils-json";
 
 const db = firestore();
 const bucket = storage().bucket();
@@ -166,11 +168,19 @@ export async function update(
   snapshot.forEach(async (result) => await result.ref.set(object));
 }
 
-export async function removeActivity(undoActivity: AP.Undo) {
-  const targetActivity = <AP.Activity>undoActivity.object;
-  switch (targetActivity.type) {
+export async function removeActivity(activity: AP.Activity) {
+  switch (activity.type) {
+    case AP.ActivityTypes.CREATE:
+      const [username, domain] = extractHandles(
+        (activity.actor as any).account
+      );
+      const undo = await createDeleteActivity(username, domain, activity);
+      sendToAll(domain, username, undo).then(() =>
+        remove(activity.type as string, new Query(activity.id.toString()))
+      );
+      break;
     case AP.ActivityTypes.FOLLOW:
-      remove(AP.ActivityTypes.FOLLOW, new Query(targetActivity.id.toString()));
+      remove(activity.type as string, new Query(activity.id.toString()));
       break;
     default:
       return "ActivityType not supported or doesn't exist";
@@ -289,7 +299,7 @@ export async function sendSignedRequestByAccount(
   return sendSignedRequest(endpoint, method, object, actorInfo);
 }
 
-async function sendSignedRequest(
+export async function sendSignedRequest(
   endpoint: URL,
   method: string,
   object: AP.Activity,

@@ -1,7 +1,9 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response, Router } from "express";
 import {
+  getFollowers,
   getFollowersActivity,
+  getFollowings,
   inbox,
   outbox,
 } from "../../service/user.service";
@@ -44,13 +46,16 @@ router.get("/:username", async (req: Request, res: Response) => {
  * @param username
  */
 router.get("/:username/followers", async (req: Request, res: Response) => {
-  res.send(
-    await searchByField(
-      AP.ActivityTypes.FOLLOW,
-      "object",
-      `https://middle-fed.onrender.com/u/${req.params.username}`
-    )
-  );
+  const follows = await getFollowers(req.params.username);
+  const dat = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    id: `https://middle-fed.onrender.com/${req.params.username}/followers`,
+    type: "OrderedCollection",
+    totalItems: follows.length,
+    items: follows,
+  };
+
+  res.send(dat);
 });
 
 /**
@@ -58,7 +63,16 @@ router.get("/:username/followers", async (req: Request, res: Response) => {
  * @param username
  */
 router.get("/:username/following", async (req: Request, res: Response) => {
-  res.send(await getFollowersActivity(req.params.username));
+  const follows = await getFollowings(req.params.username);
+  const dat = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    id: `https://middle-fed.onrender.com/${req.params.username}/following`,
+    type: "OrderedCollection",
+    totalItems: follows.length,
+    items: follows,
+  };
+
+  res.send(dat);
 });
 
 /**
@@ -67,7 +81,9 @@ router.get("/:username/following", async (req: Request, res: Response) => {
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", async (req: Request, res: Response) => {
+  console.log(req.params.username, "inbox");
   inbox(req, res);
+  res.sendStatus(202);
 });
 
 /**
@@ -75,6 +91,8 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
  * @param username
  * @requires activity - body should have an activity to be posted
  */
-router.post("/:username/inbox", async (req: Request, res: Response) => {
+router.get("/:username/outbox", async (req: Request, res: Response) => {
+  console.log(req.params.username, "outbox");
   outbox(req, res);
+  res.sendStatus(202);
 });

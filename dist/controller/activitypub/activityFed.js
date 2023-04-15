@@ -18,6 +18,15 @@ exports.activityFedRouter = (0, express_1.Router)();
 const router = (0, express_1.Router)();
 exports.activityFedRouter.use("/activity", router);
 /**
+ * Deletes an activity
+ *
+ * @requestParam activityId - id of the activity to delete
+ */
+router.delete("/:activityType/:uuid", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const activity = yield (0, utils_1.searchByField)(req.params.activityType, "id", `https://middle-fed.onrender.com${req.originalUrl}`);
+    (0, utils_1.removeActivity)(activity[0]).then(() => res.sendStatus(202));
+}));
+/**
  * Undoes an activity
  * @param username - name of current user
  * @param activityId - id of the activity to undo

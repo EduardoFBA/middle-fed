@@ -4,6 +4,7 @@ import { sendToAll } from "../../service/activity.service";
 import {
   activityAlreadyExists,
   extractHandles,
+  removeActivity,
   save,
   sendSignedRequestByAccount,
 } from "../../utils";
@@ -12,6 +13,7 @@ import {
   createFollowActivity,
   createLikeActivity,
   createNoteObject,
+  createUndoActivity,
   wrapObjectInActivity,
 } from "../../utils-json";
 
@@ -29,14 +31,14 @@ activityApiRouter.use("/activity", router);
  */
 router.post("/:account/create/note", async (req: Request, res: Response) => {
   try {
+    const [username, domain] = extractHandles(req.params.account);
     const content: string = req.body.content;
     const name: string = req.body.name;
     const bto: string[] = req.body.bto ? req.body.bto : [];
-    const publicPost: boolean = req.body.to && req.body.to.length;
-    const to: string[] = publicPost
+    const publicPost: boolean = req.body.to == null || req.body.to.length === 0;
+    const to: string[] = !publicPost
       ? req.body.to
       : ["https://www.w3.org/ns/activitystreams#Public"];
-    const [username, domain] = extractHandles(req.params.account);
 
     const note = createNoteObject(name, content, username, domain, bto, to);
     const create = await wrapObjectInActivity(
@@ -46,8 +48,9 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
       domain
     );
 
+    console.log(publicPost);
     if (publicPost) {
-      sendToAll;
+      sendToAll(domain, username, create);
     } else {
       for (let inbox of to.concat(bto)) {
         sendSignedRequestByAccount(

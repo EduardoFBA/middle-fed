@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.truncateForeignActor = exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createLikeActivity = exports.createFollowActivity = exports.createDislikeActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
+exports.truncateForeignActor = exports.createWebfinger = exports.createUser = exports.wrapObjectInActivity = exports.createNoteObject = exports.createUndoActivity = exports.createLikeActivity = exports.createFollowActivity = exports.createDislikeActivity = exports.createDeleteActivity = exports.createCreateActivity = exports.createAcceptActivity = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const crypto_1 = require("crypto");
 const utils_1 = require("./utils");
@@ -41,6 +41,15 @@ function createCreateActivity(username, domain, object) {
     });
 }
 exports.createCreateActivity = createCreateActivity;
+function createDeleteActivity(username, domain, activity) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const del = (yield createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.DELETE));
+        del.type = activitypub_core_types_1.AP.ActivityTypes.DELETE;
+        del.object = activity;
+        return del;
+    });
+}
+exports.createDeleteActivity = createDeleteActivity;
 function createDislikeActivity(username, domain, activity) {
     return __awaiter(this, void 0, void 0, function* () {
         const dislike = (yield createActivity(username, domain, activitypub_core_types_1.AP.ActivityTypes.DISLIKE));

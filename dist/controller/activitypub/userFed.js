@@ -46,14 +46,30 @@ router.get("/:username", (req, res) => __awaiter(void 0, void 0, void 0, functio
  * @param username
  */
 router.get("/:username/followers", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object", `https://middle-fed.onrender.com/u/${req.params.username}`));
+    const follows = yield (0, user_service_1.getFollowers)(req.params.username);
+    const dat = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        id: `https://middle-fed.onrender.com/${req.params.username}/followers`,
+        type: "OrderedCollection",
+        totalItems: follows.length,
+        items: follows,
+    };
+    res.send(dat);
 }));
 /**
  * Gets user's following list
  * @param username
  */
 router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield (0, user_service_1.getFollowersActivity)(req.params.username));
+    const follows = yield (0, user_service_1.getFollowings)(req.params.username);
+    const dat = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        id: `https://middle-fed.onrender.com/${req.params.username}/following`,
+        type: "OrderedCollection",
+        totalItems: follows.length,
+        items: follows,
+    };
+    res.send(dat);
 }));
 /**
  * Posts on the user's inbox
@@ -61,14 +77,18 @@ router.get("/:username/following", (req, res) => __awaiter(void 0, void 0, void 
  * @requires activity - body should have an activity to be posted
  */
 router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.params.username, "inbox");
     (0, user_service_1.inbox)(req, res);
+    res.sendStatus(202);
 }));
 /**
  * Gets the user's outbox
  * @param username
  * @requires activity - body should have an activity to be posted
  */
-router.post("/:username/inbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/:username/outbox", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.params.username, "outbox");
     (0, user_service_1.outbox)(req, res);
+    res.sendStatus(202);
 }));
 //# sourceMappingURL=userFed.js.map

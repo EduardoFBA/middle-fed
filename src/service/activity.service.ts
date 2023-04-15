@@ -1,21 +1,27 @@
 import { AP } from "activitypub-core-types";
-import { Query, search, sendSignedRequestById } from "../utils";
+import { Query, search, searchByField, sendSignedRequest } from "../utils";
 
 export async function sendToAll(
-  url: string | URL,
-  actor: AP.Actor,
+  domain: string,
+  username: string,
   activity: AP.Activity
 ) {
-  const foreignActorQuery = new Query(null);
-  foreignActorQuery.fieldPath = "account";
-  foreignActorQuery.opStr = "==";
+  const foreignActorQuery = new Query(`https://${domain}/u/${username}`);
+  foreignActorQuery.opStr = "!=";
 
   const actors = <AP.Person[]>(
     await search(AP.ActorTypes.PERSON, foreignActorQuery)
   );
+  const actorInfo = (
+    await searchByField(
+      AP.ActorTypes.PERSON,
+      "account",
+      `${username}@${domain}`
+    )
+  )[0];
 
-  for (const actor of actors) {
-    console.log("sendAll", actor);
-    sendSignedRequestById(new URL(url), "POST", activity, actor.id);
+  for (const act of actors) {
+    console.log("sendToAll", act.inbox);
+    sendSignedRequest(act.inbox as URL, "POST", activity, actorInfo);
   }
 }

@@ -46,6 +46,20 @@ export async function createCreateActivity(
   return create;
 }
 
+export async function createDeleteActivity(
+  username: string,
+  domain: string,
+  activity: AP.Activity
+) {
+  const del = <AP.Delete>(
+    await createActivity(username, domain, AP.ActivityTypes.DELETE)
+  );
+  del.type = AP.ActivityTypes.DELETE;
+  del.object = activity;
+
+  return del;
+}
+
 export async function createDislikeActivity(
   username: string,
   domain: string,
