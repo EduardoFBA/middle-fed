@@ -44,7 +44,7 @@ function getFollowers(username) {
         const follows = yield getFollowersActivity(username);
         for (const follow of follows) {
             try {
-                const actorInfo = yield (0, utils_1.getActorInfo)(follow.actor.toString());
+                const actorInfo = yield (0, utils_1.getActorInfo)(follow.actor.id.toString());
                 actors.push(actorInfo);
             }
             catch (e) {
@@ -89,7 +89,7 @@ function inbox(req, res) {
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
                 console.log("accept", activity);
-                res.sendStatus(202);
+                res.sendStatus(204);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
@@ -104,7 +104,7 @@ function inbox(req, res) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.CREATE, query);
                     }
                 }
-                res.sendStatus(202);
+                res.sendStatus(204);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
                 const follow = activity;
@@ -150,7 +150,7 @@ function inbox(req, res) {
                     res.status(400).send("Activity missing required fields");
                     return;
                 }
-                (0, utils_1.removeActivity)(undoActivity.object).then(() => res.sendStatus(200));
+                (0, utils_1.removeActivity)(undoActivity.object).then(() => res.sendStatus(204));
                 return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
@@ -159,7 +159,7 @@ function inbox(req, res) {
                 }
                 console.log(activity.type, activity);
                 (0, utils_1.save)(activity.type.toString(), activity)
-                    .then(() => res.sendStatus(200))
+                    .then(() => res.sendStatus(204))
                     .catch((e) => {
                     res.status(500).send(e);
                 });

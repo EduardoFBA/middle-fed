@@ -49,7 +49,7 @@ export async function getFollowers(
 
   for (const follow of follows) {
     try {
-      const actorInfo = await getActorInfo(follow.actor.toString());
+      const actorInfo = await getActorInfo((follow.actor as any).id.toString());
       actors.push(actorInfo as AP.Person);
     } catch (e) {
       console.log(e);
@@ -104,7 +104,7 @@ export async function inbox(req: Request, res: Response) {
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
       console.log("accept", activity);
-      res.sendStatus(202);
+      res.sendStatus(204);
       return;
 
     case AP.ActivityTypes.DELETE:
@@ -121,7 +121,7 @@ export async function inbox(req: Request, res: Response) {
         }
       }
 
-      res.sendStatus(202);
+      res.sendStatus(204);
       return;
     case AP.ActivityTypes.FOLLOW:
       const follow = <AP.Follow>activity;
@@ -186,7 +186,7 @@ export async function inbox(req: Request, res: Response) {
       }
 
       removeActivity(undoActivity.object as AP.Activity).then(() =>
-        res.sendStatus(200)
+        res.sendStatus(204)
       );
       return;
 
@@ -198,7 +198,7 @@ export async function inbox(req: Request, res: Response) {
 
       console.log(activity.type, activity);
       save(activity.type.toString(), activity)
-        .then(() => res.sendStatus(200))
+        .then(() => res.sendStatus(204))
         .catch((e) => {
           res.status(500).send(e);
         });

@@ -38,7 +38,6 @@ router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, voi
             : ["https://www.w3.org/ns/activitystreams#Public"];
         const note = (0, utils_json_1.createNoteObject)(name, content, username, domain, bto, to);
         const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, domain);
-        console.log(publicPost);
         if (publicPost) {
             (0, activity_service_1.sendToAll)(domain, username, create);
         }
@@ -72,7 +71,7 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
     if (targetId.toString().includes("/u/") &&
         targetId.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);
@@ -82,12 +81,14 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
     const response = yield (0, utils_1.sendSignedRequestByAccount)(follow.object.inbox, "POST", follow, domain, username);
     if (response.ok) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);
         });
     }
+    else
+        res.status(500).send("Internal server error");
 }));
 /**
  * Likes an activity
@@ -107,7 +108,7 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
     if (actor.id.toString().includes("/u/") &&
         actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);
@@ -118,7 +119,7 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
     const response = yield (0, utils_1.sendSignedRequestByAccount)(new URL(inbox), "POST", like, domain, username);
     if (response.ok)
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);
@@ -144,7 +145,7 @@ router.post("/:account/dislike", (req, res) => __awaiter(void 0, void 0, void 0,
     if (actor.id.toString().includes("/u/") &&
         actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);
@@ -155,7 +156,7 @@ router.post("/:account/dislike", (req, res) => __awaiter(void 0, void 0, void 0,
     const response = yield (0, utils_1.sendSignedRequestByAccount)(new URL(inbox), "POST", dislike, domain, username);
     if (response.ok)
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
-            .then(() => res.sendStatus(200))
+            .then(() => res.sendStatus(204))
             .catch((e) => {
             console.log(e);
             res.sendStatus(500);

@@ -48,7 +48,6 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
       domain
     );
 
-    console.log(publicPost);
     if (publicPost) {
       sendToAll(domain, username, create);
     } else {
@@ -93,7 +92,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
     targetId.toString().split("/u/")[0].includes(domain)
   ) {
     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
@@ -112,12 +111,12 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
 
   if (response.ok) {
     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
       });
-  }
+  } else res.status(500).send("Internal server error");
 });
 
 /**
@@ -143,7 +142,7 @@ router.post("/:account/like", async (req: Request, res: Response) => {
     actor.id.toString().split("/u/")[0].includes(domain)
   ) {
     save(AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
@@ -164,7 +163,7 @@ router.post("/:account/like", async (req: Request, res: Response) => {
 
   if (response.ok)
     save(AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
@@ -195,7 +194,7 @@ router.post("/:account/dislike", async (req: Request, res: Response) => {
     actor.id.toString().split("/u/")[0].includes(domain)
   ) {
     save(AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
@@ -216,7 +215,7 @@ router.post("/:account/dislike", async (req: Request, res: Response) => {
 
   if (response.ok)
     save(AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))
-      .then(() => res.sendStatus(200))
+      .then(() => res.sendStatus(204))
       .catch((e) => {
         console.log(e);
         res.sendStatus(500);
