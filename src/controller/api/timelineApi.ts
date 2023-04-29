@@ -28,7 +28,6 @@ router.get("/user/:account", async (req: Request, res: Response) => {
 router.get("/following/:account", async (req: Request, res: Response) => {
   const [username, _] = extractHandles(req.params.account);
   const followers = await getFollowings(username);
-  const queries: Query[] = [];
 
   if (followers.length == 0) {
     res.send([]);

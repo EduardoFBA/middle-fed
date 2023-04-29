@@ -1,14 +1,25 @@
 import { AP } from "activitypub-core-types";
-import { firestore, storage } from "firebase-admin";
 import { createHash, createSign, randomUUID, Sign } from "crypto";
+import { firestore, storage } from "firebase-admin";
 import fetch from "node-fetch";
 import { PassThrough, Readable } from "stream";
-import { CollectionPageTypes } from "activitypub-core-types/lib/activitypub";
 import { sendToAll } from "./service/activity.service";
 import { createDeleteActivity, createUndoActivity } from "./utils-json";
 
 const db = firestore();
 const bucket = storage().bucket();
+
+export const acceptedActivityTypes = [
+  "ACCEPT",
+  "CREATE",
+  "DELETE",
+  "DISLIKE",
+  "FOLLOW",
+  "LIKE",
+  "REJECT",
+  "REMOVE",
+  "UNDO",
+];
 
 export class Query {
   constructor(value: any) {
@@ -174,10 +185,24 @@ export async function removeActivity(activity: AP.Activity) {
       const [username, domain] = extractHandles(
         (activity.actor as any).account
       );
-      const undo = await createDeleteActivity(username, domain, activity);
-      sendToAll(domain, username, undo).then(() =>
+      const removeCreate = await createDeleteActivity(
+        username,
+        domain,
+        activity
+      );
+      sendToAll(`https://${domain}/u/${username}`, removeCreate).then(() =>
         remove(activity.type as string, new Query(activity.id.toString()))
       );
+      break;
+    case AP.ActivityTypes.DISLIKE:
+    case AP.ActivityTypes.LIKE:
+      const undo = await createUndoActivity(username, domain, activity);
+      const person = activity.actor as AP.Person;
+      const inbox = new URL(person.inbox.toString());
+      sendSignedRequestByAccount(inbox, "POST", undo, domain, username).then(
+        () => remove(activity.type as string, new Query(activity.id.toString()))
+      );
+
       break;
     case AP.ActivityTypes.FOLLOW:
       remove(activity.type as string, new Query(activity.id.toString()));
@@ -211,9 +236,16 @@ export async function activityAlreadyExists(
     case AP.ActivityTypes.LIKE:
     case AP.ActivityTypes.DISLIKE:
       const like = <AP.Like>activity;
-      const queryLike = new Query((like.object as any).id);
-      queryLike.fieldPath = "object.id";
-      const likeSearch = await search(activity.type as string, queryLike);
+      const queryActor = new Query((like.actor as any).id);
+      queryActor.fieldPath = "actor.id";
+      const queryObject = new Query((like.object as any).id);
+      queryObject.fieldPath = "object.id";
+
+      const likeSearch = await search(
+        activity.type as string,
+        queryActor,
+        queryObject
+      );
       return !!likeSearch.length;
 
     default:

@@ -12,12 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendToAll = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
-function sendToAll(domain, username, activity) {
+function sendToAll(id, activity) {
     return __awaiter(this, void 0, void 0, function* () {
-        const foreignActorQuery = new utils_1.Query(`https://${domain}/u/${username}`);
+        const foreignActorQuery = new utils_1.Query(id);
         foreignActorQuery.opStr = "!=";
         const actors = (yield (0, utils_1.search)(activitypub_core_types_1.AP.ActorTypes.PERSON, foreignActorQuery));
-        const actorInfo = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "account", `${username}@${domain}`))[0];
+        const actorInfo = (yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActorTypes.PERSON, "id", id))[0];
         for (const act of actors) {
             console.log("sendToAll", act.inbox);
             (0, utils_1.sendSignedRequest)(act.inbox, "POST", activity, actorInfo);

@@ -1,6 +1,7 @@
 import { AP } from "activitypub-core-types";
 import { Request, Response } from "express";
 import {
+  acceptedActivityTypes,
   activityAlreadyExists,
   buffer,
   extractHandles,
@@ -11,9 +12,11 @@ import {
   save,
   searchByField,
   sendSignedRequestByAccount,
+  sendSignedRequestById,
   update,
 } from "../utils";
 import { createAcceptActivity, truncateForeignActor } from "../utils-json";
+import { sendToAll } from "./activity.service";
 import { getNotes } from "./timeline.service";
 
 export async function updateActor(actor: AP.Person): Promise<void> {
@@ -147,17 +150,7 @@ export async function inbox(req: Request, res: Response) {
         accept,
         localDomain,
         username
-      )
-        .then(() => {
-          console.log("follow", follow);
-          save(AP.ActivityTypes.FOLLOW, follow).catch((e) => {
-            res.status(500).send(e);
-          });
-        })
-        .catch((e) => {
-          remove(AP.ActivityTypes.FOLLOW, new Query(follow.id));
-          res.status(500).send(e);
-        });
+      );
       return;
 
     case AP.ActivityTypes.DISLIKE:
@@ -190,6 +183,21 @@ export async function inbox(req: Request, res: Response) {
       );
       return;
 
+    case AP.ActivityTypes.REJECT:
+      const reject = <AP.Reject>activity;
+      const rejectActor = <any>reject.actor;
+      const rejectObject = <any>reject.object;
+      const followerId = rejectActor?.id || rejectActor;
+      const followedId = rejectObject?.id || rejectObject;
+
+      const followerQuery = new Query(followerId);
+      followerQuery.fieldPath = "actor.id";
+      const followedQuery = new Query(followedId);
+      followedQuery.fieldPath = "object.id";
+
+      remove(AP.ActivityTypes.FOLLOW, followerQuery, followedQuery);
+      return;
+
     default:
       if (await activityAlreadyExists(activity)) {
         res.status(409).send("Activity already exists");
@@ -208,9 +216,34 @@ export async function inbox(req: Request, res: Response) {
 }
 
 export async function outbox(req: Request, res: Response) {
-  const [username, domain] = extractHandles(req.params.account);
-  const userQuery = new Query(`https://${domain}/u/${username}`);
-  userQuery.fieldPath = "actor";
+  const buf = await buffer(req);
+  const rawBody = buf.toString("utf8");
+  const activity: AP.Activity = <AP.Activity>JSON.parse(rawBody);
 
-  res.send(await getNotes(AP.ActivityTypes.CREATE, userQuery));
+  if (
+    !activity.id ||
+    (!activity.actor && !(activity.actor as any).id) ||
+    !activity.type ||
+    !acceptedActivityTypes.includes(activity.type as string)
+  ) {
+    res.status(500).send("Invalid activity");
+    return;
+  }
+  const actor = <any>activity.actor;
+  const actorId = actor?.id || actor;
+  const publicPost: boolean = req.body.to == null || req.body.to.length === 0;
+  const bto: string[] = req.body.bto ? req.body.bto : [];
+  const to: string[] = !publicPost
+    ? req.body.to
+    : ["https://www.w3.org/ns/activitystreams#Public"];
+
+  save(activity.type as string, activity);
+
+  if (publicPost) {
+    sendToAll(actorId, activity);
+  } else {
+    for (let inbox of to.concat(bto)) {
+      sendSignedRequestById(new URL(inbox), "POST", activity, actorId);
+    }
+  }
 }

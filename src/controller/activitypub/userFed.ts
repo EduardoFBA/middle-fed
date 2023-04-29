@@ -83,7 +83,6 @@ router.get("/:username/following", async (req: Request, res: Response) => {
 router.post("/:username/inbox", async (req: Request, res: Response) => {
   console.log(req.params.username, "inbox");
   inbox(req, res);
-  res.sendStatus(202);
 });
 
 /**
@@ -91,8 +90,7 @@ router.post("/:username/inbox", async (req: Request, res: Response) => {
  * @param username
  * @requires activity - body should have an activity to be posted
  */
-router.get("/:username/outbox", async (req: Request, res: Response) => {
+router.post("/:username/outbox", async (req: Request, res: Response) => {
   console.log(req.params.username, "outbox");
   outbox(req, res);
-  res.sendStatus(202);
 });

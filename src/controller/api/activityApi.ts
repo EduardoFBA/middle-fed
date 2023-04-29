@@ -1,11 +1,15 @@
 import { AP } from "activitypub-core-types";
-import { Request, Response, Router } from "express";
+import { CoreObjectTypes } from "activitypub-core-types/lib/activitypub";
+import { query, Request, Response, Router } from "express";
 import { sendToAll } from "../../service/activity.service";
 import {
   activityAlreadyExists,
   extractHandles,
+  Query,
+  remove,
   removeActivity,
   save,
+  search,
   sendSignedRequestByAccount,
 } from "../../utils";
 import {
@@ -33,7 +37,7 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
   try {
     const [username, domain] = extractHandles(req.params.account);
     const content: string = req.body.content;
-    const name: string = req.body.name;
+    const name: string = req.body.name || CoreObjectTypes.NOTE;
     const bto: string[] = req.body.bto ? req.body.bto : [];
     const publicPost: boolean = req.body.to == null || req.body.to.length === 0;
     const to: string[] = !publicPost
@@ -49,7 +53,7 @@ router.post("/:account/create/note", async (req: Request, res: Response) => {
     );
 
     if (publicPost) {
-      sendToAll(domain, username, create);
+      sendToAll(`https://${domain}/u/${username}`, create);
     } else {
       for (let inbox of to.concat(bto)) {
         sendSignedRequestByAccount(
@@ -137,6 +141,14 @@ router.post("/:account/like", async (req: Request, res: Response) => {
     return;
   }
 
+  const queryActor = new Query((like.actor as any).id);
+  queryActor.fieldPath = "actor.id";
+  const queryObject = new Query((like.object as any).id);
+  queryObject.fieldPath = "object.id";
+  const dis = await search(AP.ActivityTypes.DISLIKE, queryActor, queryObject);
+
+  if (dis.length) removeActivity(dis[0]);
+
   if (
     actor.id.toString().includes("/u/") &&
     actor.id.toString().split("/u/")[0].includes(domain)
@@ -180,14 +192,22 @@ router.post("/:account/dislike", async (req: Request, res: Response) => {
   const [username, domain] = extractHandles(req.params.account);
   const activity = <AP.Activity>req.body.activity;
 
-  if (await activityAlreadyExists(activity)) {
+  const object = (activity as any).object;
+  const actor = activity.actor as AP.Person;
+  const dislike = await createDislikeActivity(username, domain, object);
+
+  if (await activityAlreadyExists(dislike)) {
     res.status(409).send("Activity already exists");
     return;
   }
 
-  const object = (activity as any).object;
-  const actor = activity.actor as AP.Person;
-  const dislike = await createDislikeActivity(username, domain, object);
+  const queryActor = new Query((dislike.actor as any).id);
+  queryActor.fieldPath = "actor.id";
+  const queryObject = new Query((dislike.object as any).id);
+  queryObject.fieldPath = "object.id";
+  const like = await search(AP.ActivityTypes.LIKE, queryActor, queryObject);
+
+  if (like.length) removeActivity(like[0]);
 
   if (
     actor.id.toString().includes("/u/") &&

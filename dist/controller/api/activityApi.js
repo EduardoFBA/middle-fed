@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activityApiRouter = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
+const activitypub_1 = require("activitypub-core-types/lib/activitypub");
 const express_1 = require("express");
 const activity_service_1 = require("../../service/activity.service");
 const utils_1 = require("../../utils");
@@ -30,7 +31,7 @@ router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, voi
     try {
         const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
         const content = req.body.content;
-        const name = req.body.name;
+        const name = req.body.name || activitypub_1.CoreObjectTypes.NOTE;
         const bto = req.body.bto ? req.body.bto : [];
         const publicPost = req.body.to == null || req.body.to.length === 0;
         const to = !publicPost
@@ -39,7 +40,7 @@ router.post("/:account/create/note", (req, res) => __awaiter(void 0, void 0, voi
         const note = (0, utils_json_1.createNoteObject)(name, content, username, domain, bto, to);
         const create = yield (0, utils_json_1.wrapObjectInActivity)(activitypub_core_types_1.AP.ActivityTypes.CREATE, note, username, domain);
         if (publicPost) {
-            (0, activity_service_1.sendToAll)(domain, username, create);
+            (0, activity_service_1.sendToAll)(`https://${domain}/u/${username}`, create);
         }
         else {
             for (let inbox of to.concat(bto)) {
@@ -105,6 +106,13 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
         res.status(409).send("Activity already exists");
         return;
     }
+    const queryActor = new utils_1.Query(like.actor.id);
+    queryActor.fieldPath = "actor.id";
+    const queryObject = new utils_1.Query(like.object.id);
+    queryObject.fieldPath = "object.id";
+    const dis = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.DISLIKE, queryActor, queryObject);
+    if (dis.length)
+        (0, utils_1.removeActivity)(dis[0]);
     if (actor.id.toString().includes("/u/") &&
         actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.LIKE, JSON.parse(JSON.stringify(like)))
@@ -135,13 +143,20 @@ router.post("/:account/like", (req, res) => __awaiter(void 0, void 0, void 0, fu
 router.post("/:account/dislike", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
     const activity = req.body.activity;
-    if (yield (0, utils_1.activityAlreadyExists)(activity)) {
-        res.status(409).send("Activity already exists");
-        return;
-    }
     const object = activity.object;
     const actor = activity.actor;
     const dislike = yield (0, utils_json_1.createDislikeActivity)(username, domain, object);
+    if (yield (0, utils_1.activityAlreadyExists)(dislike)) {
+        res.status(409).send("Activity already exists");
+        return;
+    }
+    const queryActor = new utils_1.Query(dislike.actor.id);
+    queryActor.fieldPath = "actor.id";
+    const queryObject = new utils_1.Query(dislike.object.id);
+    queryObject.fieldPath = "object.id";
+    const like = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.LIKE, queryActor, queryObject);
+    if (like.length)
+        (0, utils_1.removeActivity)(like[0]);
     if (actor.id.toString().includes("/u/") &&
         actor.id.toString().split("/u/")[0].includes(domain)) {
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.DISLIKE, JSON.parse(JSON.stringify(dislike)))

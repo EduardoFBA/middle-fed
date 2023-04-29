@@ -13,7 +13,7 @@ exports.outbox = exports.inbox = exports.getFollowersActivity = exports.getFollo
 const activitypub_core_types_1 = require("activitypub-core-types");
 const utils_1 = require("../utils");
 const utils_json_1 = require("../utils-json");
-const timeline_service_1 = require("./timeline.service");
+const activity_service_1 = require("./activity.service");
 function updateActor(actor) {
     return __awaiter(this, void 0, void 0, function* () {
         yield (0, utils_1.update)(activitypub_core_types_1.AP.ActorTypes.PERSON, actor, actor.id.toString());
@@ -119,17 +119,7 @@ function inbox(req, res) {
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
                 const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, follow);
-                (0, utils_1.sendSignedRequestByAccount)(follow.actor.inbox, "POST", accept, localDomain, username)
-                    .then(() => {
-                    console.log("follow", follow);
-                    (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, follow).catch((e) => {
-                        res.status(500).send(e);
-                    });
-                })
-                    .catch((e) => {
-                    (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, new utils_1.Query(follow.id));
-                    res.status(500).send(e);
-                });
+                (0, utils_1.sendSignedRequestByAccount)(follow.actor.inbox, "POST", accept, localDomain, username);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
             case activitypub_core_types_1.AP.ActivityTypes.LIKE:
@@ -152,6 +142,18 @@ function inbox(req, res) {
                 }
                 (0, utils_1.removeActivity)(undoActivity.object).then(() => res.sendStatus(204));
                 return;
+            case activitypub_core_types_1.AP.ActivityTypes.REJECT:
+                const reject = activity;
+                const rejectActor = reject.actor;
+                const rejectObject = reject.object;
+                const followerId = (rejectActor === null || rejectActor === void 0 ? void 0 : rejectActor.id) || rejectActor;
+                const followedId = (rejectObject === null || rejectObject === void 0 ? void 0 : rejectObject.id) || rejectObject;
+                const followerQuery = new utils_1.Query(followerId);
+                followerQuery.fieldPath = "actor.id";
+                const followedQuery = new utils_1.Query(followedId);
+                followedQuery.fieldPath = "object.id";
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerQuery, followedQuery);
+                return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
                     res.status(409).send("Activity already exists");
@@ -170,10 +172,32 @@ function inbox(req, res) {
 exports.inbox = inbox;
 function outbox(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        const [username, domain] = (0, utils_1.extractHandles)(req.params.account);
-        const userQuery = new utils_1.Query(`https://${domain}/u/${username}`);
-        userQuery.fieldPath = "actor";
-        res.send(yield (0, timeline_service_1.getNotes)(activitypub_core_types_1.AP.ActivityTypes.CREATE, userQuery));
+        const buf = yield (0, utils_1.buffer)(req);
+        const rawBody = buf.toString("utf8");
+        const activity = JSON.parse(rawBody);
+        if (!activity.id ||
+            (!activity.actor && !activity.actor.id) ||
+            !activity.type ||
+            !utils_1.acceptedActivityTypes.includes(activity.type)) {
+            res.status(500).send("Invalid activity");
+            return;
+        }
+        const actor = activity.actor;
+        const actorId = (actor === null || actor === void 0 ? void 0 : actor.id) || actor;
+        const publicPost = req.body.to == null || req.body.to.length === 0;
+        const bto = req.body.bto ? req.body.bto : [];
+        const to = !publicPost
+            ? req.body.to
+            : ["https://www.w3.org/ns/activitystreams#Public"];
+        (0, utils_1.save)(activity.type, activity);
+        if (publicPost) {
+            (0, activity_service_1.sendToAll)(actorId, activity);
+        }
+        else {
+            for (let inbox of to.concat(bto)) {
+                (0, utils_1.sendSignedRequestById)(new URL(inbox), "POST", activity, actorId);
+            }
+        }
     });
 }
 exports.outbox = outbox;

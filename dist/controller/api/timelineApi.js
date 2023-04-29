@@ -35,7 +35,6 @@ router.get("/user/:account", (req, res) => __awaiter(void 0, void 0, void 0, fun
 router.get("/following/:account", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const [username, _] = (0, utils_1.extractHandles)(req.params.account);
     const followers = yield (0, user_service_1.getFollowings)(username);
-    const queries = [];
     if (followers.length == 0) {
         res.send([]);
         return;

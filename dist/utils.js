@@ -19,16 +19,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSignedRequest = exports.sendSignedRequestByAccount = exports.sendSignedRequestById = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = void 0;
+exports.sendSignedRequest = exports.sendSignedRequestByAccount = exports.sendSignedRequestById = exports.buffer = exports.stripHtml = exports.extractHandles = exports.getWebfinger = exports.getActorInfo = exports.activityAlreadyExists = exports.removeActivity = exports.update = exports.remove = exports.search = exports.searchByField = exports.save = exports.list = exports.uploadToStorage = exports.getFromStorage = exports.getMimeByBase64 = exports.MimeTypes = exports.Query = exports.acceptedActivityTypes = void 0;
 const activitypub_core_types_1 = require("activitypub-core-types");
-const firebase_admin_1 = require("firebase-admin");
 const crypto_1 = require("crypto");
+const firebase_admin_1 = require("firebase-admin");
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const stream_1 = require("stream");
 const activity_service_1 = require("./service/activity.service");
 const utils_json_1 = require("./utils-json");
 const db = (0, firebase_admin_1.firestore)();
 const bucket = (0, firebase_admin_1.storage)().bucket();
+exports.acceptedActivityTypes = [
+    "ACCEPT",
+    "CREATE",
+    "DELETE",
+    "DISLIKE",
+    "FOLLOW",
+    "LIKE",
+    "REJECT",
+    "REMOVE",
+    "UNDO",
+];
 class Query {
     constructor(value) {
         this.fieldPath = "id";
@@ -168,8 +179,15 @@ function removeActivity(activity) {
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.CREATE:
                 const [username, domain] = extractHandles(activity.actor.account);
-                const undo = yield (0, utils_json_1.createDeleteActivity)(username, domain, activity);
-                (0, activity_service_1.sendToAll)(domain, username, undo).then(() => remove(activity.type, new Query(activity.id.toString())));
+                const removeCreate = yield (0, utils_json_1.createDeleteActivity)(username, domain, activity);
+                (0, activity_service_1.sendToAll)(`https://${domain}/u/${username}`, removeCreate).then(() => remove(activity.type, new Query(activity.id.toString())));
+                break;
+            case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
+            case activitypub_core_types_1.AP.ActivityTypes.LIKE:
+                const undo = yield (0, utils_json_1.createUndoActivity)(username, domain, activity);
+                const person = activity.actor;
+                const inbox = new URL(person.inbox.toString());
+                sendSignedRequestByAccount(inbox, "POST", undo, domain, username).then(() => remove(activity.type, new Query(activity.id.toString())));
                 break;
             case activitypub_core_types_1.AP.ActivityTypes.FOLLOW:
                 remove(activity.type, new Query(activity.id.toString()));
@@ -195,9 +213,11 @@ function activityAlreadyExists(activity) {
             case activitypub_core_types_1.AP.ActivityTypes.LIKE:
             case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
                 const like = activity;
-                const queryLike = new Query(like.object.id);
-                queryLike.fieldPath = "object.id";
-                const likeSearch = yield search(activity.type, queryLike);
+                const queryActor = new Query(like.actor.id);
+                queryActor.fieldPath = "actor.id";
+                const queryObject = new Query(like.object.id);
+                queryObject.fieldPath = "object.id";
+                const likeSearch = yield search(activity.type, queryActor, queryObject);
                 return !!likeSearch.length;
             default:
                 const result = yield search(activity.type, new Query(activity.id.toString()));
