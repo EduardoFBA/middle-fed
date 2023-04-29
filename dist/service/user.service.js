@@ -87,9 +87,9 @@ function inbox(req, res) {
                 (0, utils_1.save)(activitypub_core_types_1.AP.ActorTypes.PERSON, activity.actor).catch((e) => console.log(e));
         })
             .catch((e) => console.log(e));
+        console.log(activity.type, activity);
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
-                console.log("accept", activity);
                 const accept = activity;
                 const acceptActor = accept.actor;
                 const acceptObject = accept.object;
@@ -106,7 +106,6 @@ function inbox(req, res) {
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
                 const del = activity;
-                console.log("del", del);
                 if (del.object) {
                     if (del.actor === del.object) {
                         (0, utils_1.remove)(activitypub_core_types_1.AP.ActorTypes.PERSON, new utils_1.Query(del.actor.toString()));
@@ -172,7 +171,6 @@ function inbox(req, res) {
                     res.status(409).send("Activity already exists");
                     return;
                 }
-                console.log(activity.type, activity);
                 (0, utils_1.save)(activity.type.toString(), activity)
                     .then(() => res.sendStatus(204))
                     .catch((e) => {

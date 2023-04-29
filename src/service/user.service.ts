@@ -103,9 +103,9 @@ export async function inbox(req: Request, res: Response) {
     })
     .catch((e) => console.log(e));
 
+  console.log(activity.type, activity);
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
-      console.log("accept", activity);
       const accept = <AP.Accept>activity;
 
       const acceptActor = <any>accept.actor;
@@ -131,7 +131,6 @@ export async function inbox(req: Request, res: Response) {
 
     case AP.ActivityTypes.DELETE:
       const del = <AP.Delete>activity;
-      console.log("del", del);
 
       if (del.object) {
         if (del.actor === del.object) {
@@ -208,6 +207,7 @@ export async function inbox(req: Request, res: Response) {
 
     case AP.ActivityTypes.REJECT:
       const reject = <AP.Reject>activity;
+
       const rejectActor = <any>reject.actor;
       const rejectObject = <any>reject.object;
       const followerRejectId = rejectActor?.id || rejectActor;
@@ -227,7 +227,6 @@ export async function inbox(req: Request, res: Response) {
         return;
       }
 
-      console.log(activity.type, activity);
       save(activity.type.toString(), activity)
         .then(() => res.sendStatus(204))
         .catch((e) => {
