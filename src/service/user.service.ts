@@ -4,12 +4,12 @@ import {
   acceptedActivityTypes,
   activityAlreadyExists,
   buffer,
-  extractHandles,
   getActorInfo,
   Query,
   remove,
   removeActivity,
   save,
+  search,
   searchByField,
   sendSignedRequestByAccount,
   sendSignedRequestById,
@@ -17,7 +17,6 @@ import {
 } from "../utils";
 import { createAcceptActivity, truncateForeignActor } from "../utils-json";
 import { sendToAll } from "./activity.service";
-import { getNotes } from "./timeline.service";
 
 export async function updateActor(actor: AP.Person): Promise<void> {
   await update(AP.ActorTypes.PERSON, actor, actor.id.toString());
@@ -107,6 +106,26 @@ export async function inbox(req: Request, res: Response) {
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
       console.log("accept", activity);
+      const accept = <AP.Accept>activity;
+
+      const acceptActor = <any>accept.actor;
+      const acceptObject = <any>accept.object;
+      const followerAcceptId = acceptActor?.id || acceptActor;
+      const followedAcceptId = acceptObject.object?.id || acceptObject.object;
+
+      const followerAcceptQuery = new Query(followerAcceptId);
+      followerAcceptQuery.fieldPath = "actor.id";
+      const followedAcceptQuery = new Query(followedAcceptId);
+      followedAcceptQuery.fieldPath = "object.id";
+
+      const followToAccept = await search(
+        AP.ActivityTypes.FOLLOW,
+        followerAcceptQuery,
+        followedAcceptQuery
+      )[0];
+      followToAccept.id = acceptObject.id;
+      save(followToAccept.type, followToAccept);
+
       res.sendStatus(204);
       return;
 
@@ -142,15 +161,19 @@ export async function inbox(req: Request, res: Response) {
 
       const localDomain = req.app.get("localDomain");
       const username = req.params.username;
-      const accept = await createAcceptActivity(username, localDomain, follow);
+      const acceptFollow = await createAcceptActivity(
+        username,
+        localDomain,
+        follow
+      );
 
       sendSignedRequestByAccount(
         <URL>(follow.actor as any).inbox,
         "POST",
-        accept,
+        acceptFollow,
         localDomain,
         username
-      );
+      ).then(() => save(follow.type as string, follow));
       return;
 
     case AP.ActivityTypes.DISLIKE:
@@ -187,15 +210,15 @@ export async function inbox(req: Request, res: Response) {
       const reject = <AP.Reject>activity;
       const rejectActor = <any>reject.actor;
       const rejectObject = <any>reject.object;
-      const followerId = rejectActor?.id || rejectActor;
-      const followedId = rejectObject?.id || rejectObject;
+      const followerRejectId = rejectActor?.id || rejectActor;
+      const followedRejectId = rejectObject?.object?.id || rejectObject.object;
 
-      const followerQuery = new Query(followerId);
-      followerQuery.fieldPath = "actor.id";
-      const followedQuery = new Query(followedId);
-      followedQuery.fieldPath = "object.id";
+      const followerRejectQuery = new Query(followerRejectId);
+      followerRejectQuery.fieldPath = "actor.id";
+      const followedRejectQuery = new Query(followedRejectId);
+      followedRejectQuery.fieldPath = "object.id";
 
-      remove(AP.ActivityTypes.FOLLOW, followerQuery, followedQuery);
+      remove(AP.ActivityTypes.FOLLOW, followerRejectQuery, followedRejectQuery);
       return;
 
     default:

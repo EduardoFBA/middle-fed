@@ -71,6 +71,7 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
     }
     if (targetId.toString().includes("/u/") &&
         targetId.toString().split("/u/")[0].includes(domain)) {
+        follow.id = new URL("");
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
             .then(() => res.sendStatus(204))
             .catch((e) => {
@@ -81,6 +82,7 @@ router.post("/:account/follow", (req, res) => __awaiter(void 0, void 0, void 0, 
     }
     const response = yield (0, utils_1.sendSignedRequestByAccount)(follow.object.inbox, "POST", follow, domain, username);
     if (response.ok) {
+        follow.id = new URL("");
         (0, utils_1.save)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
             .then(() => res.sendStatus(204))
             .catch((e) => {

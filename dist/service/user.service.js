@@ -68,6 +68,7 @@ function getFollowersActivity(username) {
 }
 exports.getFollowersActivity = getFollowersActivity;
 function inbox(req, res) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
@@ -89,6 +90,18 @@ function inbox(req, res) {
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
                 console.log("accept", activity);
+                const accept = activity;
+                const acceptActor = accept.actor;
+                const acceptObject = accept.object;
+                const followerAcceptId = (acceptActor === null || acceptActor === void 0 ? void 0 : acceptActor.id) || acceptActor;
+                const followedAcceptId = ((_a = acceptObject.object) === null || _a === void 0 ? void 0 : _a.id) || acceptObject.object;
+                const followerAcceptQuery = new utils_1.Query(followerAcceptId);
+                followerAcceptQuery.fieldPath = "actor.id";
+                const followedAcceptQuery = new utils_1.Query(followedAcceptId);
+                followedAcceptQuery.fieldPath = "object.id";
+                const followToAccept = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerAcceptQuery, followedAcceptQuery)[0];
+                followToAccept.id = acceptObject.id;
+                (0, utils_1.save)(followToAccept.type, followToAccept);
                 res.sendStatus(204);
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DELETE:
@@ -118,8 +131,8 @@ function inbox(req, res) {
                 follow.published = new Date();
                 const localDomain = req.app.get("localDomain");
                 const username = req.params.username;
-                const accept = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, follow);
-                (0, utils_1.sendSignedRequestByAccount)(follow.actor.inbox, "POST", accept, localDomain, username);
+                const acceptFollow = yield (0, utils_json_1.createAcceptActivity)(username, localDomain, follow);
+                (0, utils_1.sendSignedRequestByAccount)(follow.actor.inbox, "POST", acceptFollow, localDomain, username).then(() => (0, utils_1.save)(follow.type, follow));
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.DISLIKE:
             case activitypub_core_types_1.AP.ActivityTypes.LIKE:
@@ -146,13 +159,13 @@ function inbox(req, res) {
                 const reject = activity;
                 const rejectActor = reject.actor;
                 const rejectObject = reject.object;
-                const followerId = (rejectActor === null || rejectActor === void 0 ? void 0 : rejectActor.id) || rejectActor;
-                const followedId = (rejectObject === null || rejectObject === void 0 ? void 0 : rejectObject.id) || rejectObject;
-                const followerQuery = new utils_1.Query(followerId);
-                followerQuery.fieldPath = "actor.id";
-                const followedQuery = new utils_1.Query(followedId);
-                followedQuery.fieldPath = "object.id";
-                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerQuery, followedQuery);
+                const followerRejectId = (rejectActor === null || rejectActor === void 0 ? void 0 : rejectActor.id) || rejectActor;
+                const followedRejectId = ((_b = rejectObject === null || rejectObject === void 0 ? void 0 : rejectObject.object) === null || _b === void 0 ? void 0 : _b.id) || rejectObject.object;
+                const followerRejectQuery = new utils_1.Query(followerRejectId);
+                followerRejectQuery.fieldPath = "actor.id";
+                const followedRejectQuery = new utils_1.Query(followedRejectId);
+                followedRejectQuery.fieldPath = "object.id";
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerRejectQuery, followedRejectQuery);
                 return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {
