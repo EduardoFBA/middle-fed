@@ -338,6 +338,7 @@ export async function sendSignedRequest(
   actorInfo: any
 ): Promise<Response> {
   const activity = JSON.stringify(object);
+  console.log("sendSignedRequest", activity);
   const requestHeaders = {
     host: endpoint.hostname,
     date: new Date().toUTCString(),

@@ -64,21 +64,27 @@ export async function getFollowers(
 export async function getFollowingsActivity(
   username: string
 ): Promise<AP.Follow[]> {
-  return await searchByField(
-    AP.ActivityTypes.FOLLOW,
-    "actor.id",
-    `https://middle-fed.onrender.com/u/${username}`
-  );
+  const publishedQuery = new Query("");
+  publishedQuery.fieldPath = "published";
+  publishedQuery.opStr = "!=";
+
+  const actorQuery = new Query(`https://middle-fed.onrender.com/u/${username}`);
+  actorQuery.fieldPath = "actor.id";
+
+  return await search(AP.ActivityTypes.FOLLOW, publishedQuery, actorQuery);
 }
 
 export async function getFollowersActivity(
   username: string
 ): Promise<AP.Follow[]> {
-  return await searchByField(
-    AP.ActivityTypes.FOLLOW,
-    "object.id",
-    `https://middle-fed.onrender.com/u/${username}`
-  );
+  const publishedQuery = new Query("");
+  publishedQuery.fieldPath = "published";
+  publishedQuery.opStr = "!=";
+
+  const objQuery = new Query(`https://middle-fed.onrender.com/u/${username}`);
+  objQuery.fieldPath = "object.id";
+
+  return await search(AP.ActivityTypes.FOLLOW, publishedQuery, objQuery);
 }
 
 export async function inbox(req: Request, res: Response) {
@@ -107,24 +113,16 @@ export async function inbox(req: Request, res: Response) {
   switch (activity.type) {
     case AP.ActivityTypes.ACCEPT:
       const accept = <AP.Accept>activity;
+      const acceptObject = <AP.Follow>accept.object;
+      const acceptQuery = new Query(acceptObject.id);
 
-      const acceptActor = <any>accept.actor;
-      const acceptObject = <any>accept.object;
-      const followerAcceptId = acceptActor?.id || acceptActor;
-      const followedAcceptId = acceptObject.object?.id || acceptObject.object;
-
-      const followerAcceptQuery = new Query(followerAcceptId);
-      followerAcceptQuery.fieldPath = "actor.id";
-      const followedAcceptQuery = new Query(followedAcceptId);
-      followedAcceptQuery.fieldPath = "object.id";
-
-      const followToAccept = await search(
+      const followToAccept: AP.Follow = await search(
         AP.ActivityTypes.FOLLOW,
-        followerAcceptQuery,
-        followedAcceptQuery
+        acceptQuery
       )[0];
-      followToAccept.id = acceptObject.id;
-      save(followToAccept.type, followToAccept);
+      followToAccept.published = new Date();
+
+      save(followToAccept.type as string, followToAccept);
 
       res.sendStatus(204);
       return;
@@ -207,18 +205,11 @@ export async function inbox(req: Request, res: Response) {
 
     case AP.ActivityTypes.REJECT:
       const reject = <AP.Reject>activity;
+      const rejectObject = <AP.Follow>reject.object;
+      const rejectQuery = new Query(rejectObject.id);
 
-      const rejectActor = <any>reject.actor;
-      const rejectObject = <any>reject.object;
-      const followerRejectId = rejectActor?.id || rejectActor;
-      const followedRejectId = rejectObject?.object?.id || rejectObject.object;
-
-      const followerRejectQuery = new Query(followerRejectId);
-      followerRejectQuery.fieldPath = "actor.id";
-      const followedRejectQuery = new Query(followedRejectId);
-      followedRejectQuery.fieldPath = "object.id";
-
-      remove(AP.ActivityTypes.FOLLOW, followerRejectQuery, followedRejectQuery);
+      remove(AP.ActivityTypes.FOLLOW, rejectQuery);
+      res.sendStatus(204);
       return;
 
     default:

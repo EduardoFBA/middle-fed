@@ -57,18 +57,27 @@ function getFollowers(username) {
 exports.getFollowers = getFollowers;
 function getFollowingsActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "actor.id", `https://middle-fed.onrender.com/u/${username}`);
+        const publishedQuery = new utils_1.Query("");
+        publishedQuery.fieldPath = "published";
+        publishedQuery.opStr = "!=";
+        const actorQuery = new utils_1.Query(`https://middle-fed.onrender.com/u/${username}`);
+        actorQuery.fieldPath = "actor.id";
+        return yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, publishedQuery, actorQuery);
     });
 }
 exports.getFollowingsActivity = getFollowingsActivity;
 function getFollowersActivity(username) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield (0, utils_1.searchByField)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, "object.id", `https://middle-fed.onrender.com/u/${username}`);
+        const publishedQuery = new utils_1.Query("");
+        publishedQuery.fieldPath = "published";
+        publishedQuery.opStr = "!=";
+        const objQuery = new utils_1.Query(`https://middle-fed.onrender.com/u/${username}`);
+        objQuery.fieldPath = "object.id";
+        return yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, publishedQuery, objQuery);
     });
 }
 exports.getFollowersActivity = getFollowersActivity;
 function inbox(req, res) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const buf = yield (0, utils_1.buffer)(req);
         const rawBody = buf.toString("utf8");
@@ -91,16 +100,10 @@ function inbox(req, res) {
         switch (activity.type) {
             case activitypub_core_types_1.AP.ActivityTypes.ACCEPT:
                 const accept = activity;
-                const acceptActor = accept.actor;
                 const acceptObject = accept.object;
-                const followerAcceptId = (acceptActor === null || acceptActor === void 0 ? void 0 : acceptActor.id) || acceptActor;
-                const followedAcceptId = ((_a = acceptObject.object) === null || _a === void 0 ? void 0 : _a.id) || acceptObject.object;
-                const followerAcceptQuery = new utils_1.Query(followerAcceptId);
-                followerAcceptQuery.fieldPath = "actor.id";
-                const followedAcceptQuery = new utils_1.Query(followedAcceptId);
-                followedAcceptQuery.fieldPath = "object.id";
-                const followToAccept = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerAcceptQuery, followedAcceptQuery)[0];
-                followToAccept.id = acceptObject.id;
+                const acceptQuery = new utils_1.Query(acceptObject.id);
+                const followToAccept = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, acceptQuery)[0];
+                followToAccept.published = new Date();
                 (0, utils_1.save)(followToAccept.type, followToAccept);
                 res.sendStatus(204);
                 return;
@@ -156,15 +159,10 @@ function inbox(req, res) {
                 return;
             case activitypub_core_types_1.AP.ActivityTypes.REJECT:
                 const reject = activity;
-                const rejectActor = reject.actor;
                 const rejectObject = reject.object;
-                const followerRejectId = (rejectActor === null || rejectActor === void 0 ? void 0 : rejectActor.id) || rejectActor;
-                const followedRejectId = ((_b = rejectObject === null || rejectObject === void 0 ? void 0 : rejectObject.object) === null || _b === void 0 ? void 0 : _b.id) || rejectObject.object;
-                const followerRejectQuery = new utils_1.Query(followerRejectId);
-                followerRejectQuery.fieldPath = "actor.id";
-                const followedRejectQuery = new utils_1.Query(followedRejectId);
-                followedRejectQuery.fieldPath = "object.id";
-                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, followerRejectQuery, followedRejectQuery);
+                const rejectQuery = new utils_1.Query(rejectObject.id);
+                (0, utils_1.remove)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, rejectQuery);
+                res.sendStatus(204);
                 return;
             default:
                 if (yield (0, utils_1.activityAlreadyExists)(activity)) {

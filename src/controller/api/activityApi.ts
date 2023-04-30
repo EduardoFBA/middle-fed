@@ -95,7 +95,6 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
     targetId.toString().includes("/u/") &&
     targetId.toString().split("/u/")[0].includes(domain)
   ) {
-    follow.id = new URL("");
     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
       .then(() => res.sendStatus(204))
       .catch((e) => {
@@ -106,6 +105,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
     return;
   }
 
+  delete follow.published;
   const response = await sendSignedRequestByAccount(
     <URL>(follow.object as any).inbox,
     "POST",
@@ -115,7 +115,7 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
   );
 
   if (response.ok) {
-    follow.id = new URL("");
+    follow.id = new URL(`https://${domain}/Follow/pending`);
     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
       .then(() => res.sendStatus(204))
       .catch((e) => {

@@ -301,6 +301,7 @@ exports.sendSignedRequestByAccount = sendSignedRequestByAccount;
 function sendSignedRequest(endpoint, method, object, actorInfo) {
     return __awaiter(this, void 0, void 0, function* () {
         const activity = JSON.stringify(object);
+        console.log("sendSignedRequest", activity);
         const requestHeaders = {
             host: endpoint.hostname,
             date: new Date().toUTCString(),
