@@ -116,9 +116,8 @@ export async function inbox(req: Request, res: Response) {
       const acceptObject = <AP.Follow>accept.object;
       const acceptQuery = new Query(acceptObject.id);
 
-      const followToAccept: AP.Follow = await search(
-        AP.ActivityTypes.FOLLOW,
-        acceptQuery
+      const followToAccept: AP.Follow = (
+        await search(AP.ActivityTypes.FOLLOW, acceptQuery)
       )[0];
       followToAccept.published = new Date();
 

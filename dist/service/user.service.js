@@ -102,7 +102,7 @@ function inbox(req, res) {
                 const accept = activity;
                 const acceptObject = accept.object;
                 const acceptQuery = new utils_1.Query(acceptObject.id);
-                const followToAccept = yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, acceptQuery)[0];
+                const followToAccept = (yield (0, utils_1.search)(activitypub_core_types_1.AP.ActivityTypes.FOLLOW, acceptQuery))[0];
                 followToAccept.published = new Date();
                 (0, utils_1.save)(followToAccept.type, followToAccept);
                 res.sendStatus(204);
