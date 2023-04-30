@@ -115,7 +115,6 @@ router.post("/:account/follow", async (req: Request, res: Response) => {
   );
 
   if (response.ok) {
-    follow.id = new URL(`https://${domain}/Follow/pending`);
     save(AP.ActivityTypes.FOLLOW, JSON.parse(JSON.stringify(follow)))
       .then(() => res.sendStatus(204))
       .catch((e) => {
